@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#f0ebe3">
+<link rel="manifest" href="manifest.json">
+<title>고수의 바둑판 — 바둑 · 오목 · 알까기</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@500;700;900&family=Noto+Sans+KR:wght@400;500;700;900&display=swap');
+:root{--bg:#f0ebe3;--bg2:#e8e2d8;--bg3:#dfd8cc;--card:#ffffff;--card2:#f5f1ea;--text:#2c2418;--sub:#8a7e72;--gold:#b8912e;--gold2:#9a7820;--goldL:#d4a843;--border:#d4ccc0;--blue:#4a8ab0;--r:14px;--serif:'Noto Serif KR',serif;--sans:'Noto Sans KR',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);font-family:var(--sans);display:flex;flex-direction:column;align-items:center;min-height:100vh;min-height:100dvh;color:var(--text);-webkit-tap-highlight-color:transparent;user-select:none;overflow-x:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+
+/* SPLASH */
+.splash{position:fixed;inset:0;background:linear-gradient(160deg,#f0ebe3,#e8e0d4);z-index:200;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .8s,transform .6s}
+.splash.hide{opacity:0;transform:scale(1.05);pointer-events:none}
+.splash-board{width:120px;height:120px;background:linear-gradient(145deg,#c8a038,#a88428);border-radius:24px;position:relative;box-shadow:0 8px 32px rgba(180,140,40,.25),0 0 60px rgba(212,168,67,.08);margin-bottom:24px;overflow:hidden;animation:sbFloat 2.5s ease-in-out infinite}
+@keyframes sbFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.splash-board::before{content:'';position:absolute;inset:14px;background:repeating-linear-gradient(0deg,transparent,transparent 14px,rgba(80,60,20,.3) 14px,rgba(80,60,20,.3) 15px),repeating-linear-gradient(90deg,transparent,transparent 14px,rgba(80,60,20,.3) 14px,rgba(80,60,20,.3) 15px)}
+.splash-board .s{position:absolute;border-radius:50%}
+.splash-board .s.bk{background:radial-gradient(circle at 35% 30%,#555,#111);box-shadow:1px 2px 4px rgba(0,0,0,.4)}
+.splash-board .s.wt{background:radial-gradient(circle at 35% 30%,#fff,#ddd);box-shadow:1px 2px 4px rgba(0,0,0,.2)}
+.splash-title{font-family:var(--serif);font-size:36px;font-weight:900;color:var(--gold);letter-spacing:-.02em;margin-bottom:4px}
+.splash-sub{font-size:13px;font-weight:500;color:var(--sub);letter-spacing:.2em;margin-bottom:32px}
+.splash-ld{width:36px;height:36px;border:2.5px solid var(--border);border-top-color:var(--gold);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* SCREENS */
+.screen{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;overflow-y:auto;transition:opacity .4s,transform .4s;padding:20px 16px}
+.screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none}
+.screen.center{justify-content:center}
+
+/* MAIN MENU */
+.logo-wrap{margin-top:20px;margin-bottom:6px}
+.logo-board{width:80px;height:80px;background:linear-gradient(145deg,#c8a038,#a88428);border-radius:18px;position:relative;box-shadow:0 6px 24px rgba(180,140,40,.2),0 2px 0 #967424;overflow:hidden;margin:0 auto 12px}
+.logo-board::before{content:'';position:absolute;inset:9px;background:repeating-linear-gradient(0deg,transparent,transparent 10px,rgba(80,60,20,.3) 10px,rgba(80,60,20,.3) 11px),repeating-linear-gradient(90deg,transparent,transparent 10px,rgba(80,60,20,.3) 10px,rgba(80,60,20,.3) 11px)}
+.main-title{font-family:var(--serif);font-size:30px;font-weight:900;color:var(--gold);text-align:center;margin-bottom:2px}
+.main-sub{font-size:12px;font-weight:500;color:var(--sub);letter-spacing:.15em;text-align:center;margin-bottom:24px}
+.gcards{display:flex;flex-direction:column;gap:12px;width:min(400px,92vw)}
+.gcard{background:var(--card);border-radius:16px;padding:18px;display:flex;align-items:center;gap:14px;cursor:pointer;transition:all .2s;border:2px solid transparent;box-shadow:0 2px 8px rgba(0,0,0,.05)}
+.gcard:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:0 6px 24px rgba(0,0,0,.08)}
+.gcard:active{transform:scale(.98)}
+.gcard .gc-i{width:56px;height:56px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.gc-baduk{background:linear-gradient(145deg,#4a4a4a,#1a1a1a)}
+.gc-omok{background:linear-gradient(145deg,#c8a038,#a88428)}
+.gc-alkk{background:linear-gradient(145deg,#3a6080,#284860)}
+.gc-learn{background:linear-gradient(145deg,#5a4028,#3a2818)}
+.gc-rule{background:linear-gradient(145deg,#384038,#283028)}
+.gcard .gc-info{flex:1}
+.gcard .gc-t{font-size:18px;font-weight:900;margin-bottom:1px}
+.gcard .gc-d{font-size:11px;font-weight:500;color:var(--sub)}
+.gcard .gc-a{font-size:18px;color:var(--sub)}
+.sndbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;background:var(--card);border-radius:var(--r);font-size:13px;font-weight:700;width:min(400px,92vw);margin-top:8px}
+.tgsw{width:46px;height:26px;background:#ccc5b8;border-radius:13px;position:relative;cursor:pointer;transition:background .3s;flex-shrink:0}
+.tgsw.on{background:#5a9a40}
+.tgsw::after{content:'';width:22px;height:22px;background:#fff;border-radius:50%;position:absolute;top:2px;left:2px;transition:transform .3s;box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.tgsw.on::after{transform:translateX(20px)}
+
+/* SETTING CARDS */
+.ss{width:min(380px,92vw);display:flex;flex-direction:column;gap:10px}
+.sc{background:var(--card);border-radius:var(--r);padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.sl{font-size:10px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px}
+.or{display:flex;gap:8px}
+.ob{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;padding:10px 6px;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:all .2s;font-size:13px;font-weight:700;background:transparent;color:var(--text);font-family:var(--sans)}
+.ob.sel{border-color:var(--gold);background:rgba(184,145,46,.08);color:var(--gold)}
+.ob .dot{width:18px;height:18px;border-radius:50%;box-shadow:1px 2px 3px rgba(0,0,0,.3);flex-shrink:0}
+.ob .dot.blk{background:radial-gradient(circle at 35% 30%,#555,#111)}
+.ob .dot.wht{background:radial-gradient(circle at 35% 30%,#fff,#d5d0c8)}
+.db{flex:1;text-align:center;padding:8px 0;border-radius:10px;border:2px solid var(--border);cursor:pointer;transition:all .2s;font-size:11px;font-weight:700;color:var(--sub);line-height:1.3;background:transparent;font-family:var(--sans)}
+.db.sel{border-color:var(--gold);color:var(--gold);background:rgba(184,145,46,.08)}
+.db .dlv{font-size:16px;display:block;margin-bottom:1px}
+.stb{width:100%;padding:14px;border:none;border-radius:var(--r);background:linear-gradient(135deg,var(--gold),var(--gold2));color:#1a1612;font-family:var(--sans);font-size:16px;font-weight:900;cursor:pointer;transition:all .2s;margin-top:6px}
+.stb:active{transform:scale(.97);opacity:.85}
+.menu-title{font-family:var(--serif);font-size:28px;font-weight:900;color:var(--gold);margin-bottom:2px;margin-top:16px}
+.menu-sub{font-size:12px;font-weight:500;color:var(--sub);margin-bottom:18px}
+.backbtn{font-family:var(--sans);font-size:13px;font-weight:700;color:var(--sub);background:var(--card);border:2px solid var(--border);border-radius:50px;padding:10px 0;text-align:center;cursor:pointer;width:100%;margin-top:4px;transition:all .15s}
+.backbtn:active{transform:scale(.97)}
+
+/* GAME SCREEN */
+.gs{display:none;flex-direction:column;align-items:center;width:100%;min-height:100vh;min-height:100dvh;padding:8px 10px;gap:6px;overflow-y:auto}
+.gs.visible{display:flex}
+.gs::before,.gs::after{content:'';flex:1 1 0;min-height:4px}
+.tb{display:flex;align-items:center;justify-content:space-between;width:min(600px,100%);padding:0 2px}
+.bb{font-family:var(--sans);font-size:14px;font-weight:700;color:var(--gold);background:none;border:none;cursor:pointer;padding:6px 4px}
+.dbg{font-size:11px;font-weight:700;color:var(--sub);background:var(--card);padding:4px 12px;border-radius:16px}
+.mvb{font-size:12px;font-weight:700;color:var(--sub)}
+.pls{display:flex;align-items:center;gap:8px}
+.pc{display:flex;align-items:center;gap:6px;padding:6px 14px;border-radius:12px;background:var(--card);border:2px solid transparent;transition:opacity .25s,border-color .25s,box-shadow .25s;box-shadow:0 1px 3px rgba(0,0,0,.15);opacity:.35}
+.pc.active{opacity:1;border-color:var(--gold);box-shadow:0 2px 10px rgba(212,168,67,.15)}
+.pc .si{width:18px;height:18px;border-radius:50%;box-shadow:1px 2px 3px rgba(0,0,0,.3)}
+.pc .si.blk{background:radial-gradient(circle at 35% 35%,#555,#1a1a1a)}
+.pc .si.wht{background:radial-gradient(circle at 35% 35%,#fff,#d0c8b8)}
+.pc .pn{font-size:clamp(12px,3vw,14px);font-weight:800}
+.pc .cap{font-size:10px;font-weight:600;color:var(--sub);margin-left:3px}
+.vst{font-size:11px;font-weight:800;color:#c4b8a8}
+.bf{position:relative;background:linear-gradient(180deg,#c8a038,#a88428);padding:5px;border-radius:14px;box-shadow:0 5px 0 0 #8a6c20,0 7px 0 0 #7a5c18,0 10px 24px rgba(0,0,0,.35);max-width:calc(100vw - 20px)}
+.bi{border-radius:10px;overflow:hidden}
+canvas{display:block;cursor:pointer;max-width:100%;height:auto}
+.thb{display:flex;align-items:center;justify-content:center;height:50px}
+.rw{display:none;align-items:center;gap:12px;background:var(--card);padding:8px 18px 8px 10px;border-radius:18px;box-shadow:0 2px 10px rgba(0,0,0,.15);animation:rf 1.2s ease infinite}
+.rw.on{display:flex}
+@keyframes rf{0%,100%{transform:translateY(0)}50%{transform:translateY(-4px)}}
+.rc{width:44px;height:44px;flex-shrink:0}
+.ra{animation:aw .5s ease infinite alternate;transform-origin:bottom center}
+@keyframes aw{from{transform:rotate(-6deg)}to{transform:rotate(6deg)}}
+.rl{animation:lb .7s ease infinite}
+@keyframes lb{0%,100%{opacity:1}50%{opacity:.2}}
+.rel,.rer{animation:ea 2s ease infinite}
+@keyframes ea{0%,38%,42%,100%{transform:scaleY(1)}40%{transform:scaleY(.1)}}
+.rt{font-size:13px;font-weight:700;color:var(--sub)}
+.td span{display:inline-block;animation:dj 1.2s ease infinite}
+.td span:nth-child(2){animation-delay:.15s}.td span:nth-child(3){animation-delay:.3s}
+@keyframes dj{0%,60%,100%{transform:translateY(0)}30%{transform:translateY(-3px)}}
+.msg{font-size:clamp(16px,4.5vw,24px);font-weight:900;height:32px;display:flex;align-items:center;justify-content:center;letter-spacing:-.02em;text-align:center}
+.msg.win{animation:wi .5s cubic-bezier(.34,1.56,.64,1) forwards}
+@keyframes wi{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+.br{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.gb{font-family:var(--sans);font-size:13px;font-weight:700;padding:8px 18px;border:2px solid var(--border);background:var(--card);color:var(--text);border-radius:50px;cursor:pointer;transition:all .15s;display:flex;align-items:center;gap:4px}
+.gb:active{transform:scale(.96)}
+.score-bar{display:flex;gap:8px;font-size:11px;font-weight:700;color:var(--sub)}
+.score-bar span{background:var(--card);padding:3px 10px;border-radius:8px}
+.power-bar-wrap{width:min(400px,85vw);height:10px;background:var(--card);border-radius:5px;overflow:hidden;margin:3px 0;visibility:hidden}
+.power-bar-fill{height:100%;width:0;background:linear-gradient(90deg,#5a9a40,#d4a843,#c04030);border-radius:5px;transition:width .05s}
+.alkkagi-info{font-size:11px;font-weight:600;color:var(--sub);text-align:center;height:16px}
+
+/* TUTORIAL */
+.tut-screen{position:fixed;inset:0;background:var(--bg);z-index:100;display:flex;flex-direction:column;overflow-y:auto;transition:opacity .4s,transform .4s;padding:0}
+.tut-screen.hidden{opacity:0;transform:scale(1.04);pointer-events:none}
+.tut-header{position:sticky;top:0;background:var(--bg);z-index:10;padding:12px 16px;display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border)}
+.tut-header .bb{padding:4px}
+.tut-header-title{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold)}
+.tut-body{padding:16px;max-width:640px;margin:0 auto;width:100%}
+.tut-category{margin-bottom:24px}
+.tut-cat-title{font-family:var(--serif);font-size:20px;font-weight:900;color:var(--gold);margin-bottom:4px}
+.tut-cat-sub{font-size:12px;color:var(--sub);margin-bottom:14px}
+.tut-list{display:flex;flex-direction:column;gap:8px}
+.tut-item{background:var(--card);border-radius:12px;padding:14px 16px;cursor:pointer;transition:all .2s;border:2px solid transparent;display:flex;align-items:center;gap:12px;box-shadow:0 1px 4px rgba(0,0,0,.04)}
+.tut-item:hover{border-color:var(--gold)}
+.tut-num{width:32px;height:32px;border-radius:50%;background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:900;color:var(--gold);flex-shrink:0}
+.tut-item-info{flex:1}
+.tut-item-t{font-size:14px;font-weight:700;margin-bottom:1px}
+.tut-item-d{font-size:11px;color:var(--sub)}
+
+/* LESSON VIEW */
+.lesson-screen{position:fixed;inset:0;background:var(--bg);z-index:110;display:flex;flex-direction:column;overflow-y:auto;transition:opacity .3s}
+.lesson-screen.hidden{opacity:0;pointer-events:none}
+.lesson-body{padding:16px;max-width:640px;margin:0 auto;width:100%}
+.lesson-title{font-family:var(--serif);font-size:22px;font-weight:900;color:var(--gold);margin-bottom:8px}
+.lesson-text{font-size:14px;line-height:1.8;color:var(--text);margin-bottom:16px;white-space:pre-line}
+.lesson-board{background:var(--card);border-radius:12px;padding:12px;margin-bottom:16px;display:flex;justify-content:center}
+.lesson-board canvas{border-radius:8px}
+.lesson-nav{display:flex;gap:8px;justify-content:center;padding-bottom:24px}
+
+/* RULES */
+.rules-body{padding:16px;max-width:640px;margin:0 auto;width:100%}
+.rules-body h2{font-family:var(--serif);font-size:20px;font-weight:900;color:var(--gold);margin:20px 0 8px}
+.rules-body h3{font-size:15px;font-weight:700;color:var(--goldL);margin:14px 0 6px}
+.rules-body p{font-size:13px;line-height:1.8;color:var(--text);margin-bottom:10px}
+.rules-body .rule-board{background:var(--card);border-radius:10px;padding:10px;margin:10px 0;display:flex;justify-content:center}
+.rules-body .rule-board canvas{border-radius:6px}
+
+/* PWA INSTALL */
+.install-banner{display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--card);border:2px solid var(--gold);border-radius:16px;padding:14px 20px;z-index:150;box-shadow:0 8px 30px rgba(0,0,0,.12);text-align:center;width:min(360px,90vw)}
+.install-banner.show{display:block;animation:slideUp .4s ease}
+@keyframes slideUp{from{transform:translateX(-50%) translateY(100px);opacity:0}to{transform:translateX(-50%) translateY(0);opacity:1}}
+.install-title{font-family:var(--serif);font-size:16px;font-weight:700;color:var(--gold);margin-bottom:6px}
+.install-desc{font-size:12px;color:var(--sub);margin-bottom:12px}
+.install-btns{display:flex;gap:8px;justify-content:center}
+.install-btn{padding:8px 20px;border-radius:50px;font-family:var(--sans);font-size:13px;font-weight:700;cursor:pointer;border:none;transition:all .15s}
+.install-btn.primary{background:var(--gold);color:#1a1612}
+.install-btn.secondary{background:var(--card);color:var(--sub);border:1px solid var(--border)}
+</style>
+</head>
+<body>
+
+<!-- SPLASH -->
+<div class="splash" id="splash">
+  <div class="splash-board">
+    <div class="s bk" style="width:20px;height:20px;top:24px;left:24px"></div>
+    <div class="s wt" style="width:20px;height:20px;top:24px;left:64px"></div>
+    <div class="s bk" style="width:20px;height:20px;top:50px;left:50px"></div>
+    <div class="s wt" style="width:20px;height:20px;top:72px;left:32px"></div>
+    <div class="s bk" style="width:20px;height:20px;top:72px;left:76px"></div>
+  </div>
+  <div class="splash-title">고수의 바둑판</div>
+  <div class="splash-sub">바둑 · 오목 · 알까기</div>
+  <div class="splash-ld"></div>
+</div>
+
+<!-- MAIN MENU -->
+<div class="screen center" id="mainMenu" style="display:none">
+  <div class="logo-wrap">
+    <div class="logo-board"></div>
+    <div class="main-title">고수의 바둑판</div>
+    <div class="main-sub">바둑 · 오목 · 알까기</div>
+  </div>
+  <div class="gcards">
+    <div class="gcard" onclick="showMenu('baduk')">
+      <div class="gc-i gc-baduk" style="color:#fff">◎</div>
+      <div class="gc-info"><div class="gc-t">바둑</div><div class="gc-d">실전 19×19 — 영역을 차지하라</div></div>
+      <div class="gc-a">›</div>
+    </div>
+    <div class="gcard" onclick="showMenu('omok')">
+      <div class="gc-i gc-omok">⚫</div>
+      <div class="gc-info"><div class="gc-t">오목</div><div class="gc-d">Five in a Row — 다섯 줄을 완성하라</div></div>
+      <div class="gc-a">›</div>
+    </div>
+    <div class="gcard" onclick="showMenu('alkkagi')">
+      <div class="gc-i gc-alkk">💥</div>
+      <div class="gc-info"><div class="gc-t">알까기</div><div class="gc-d">Stone Flick — 상대 돌을 밀어내라</div></div>
+      <div class="gc-a">›</div>
+    </div>
+    <div class="gcard" onclick="showScreen('tutMenu')">
+      <div class="gc-i gc-learn">📖</div>
+      <div class="gc-info"><div class="gc-t">바둑 배우기</div><div class="gc-d">기초 · 중급 · 고급 — 기보와 함께</div></div>
+      <div class="gc-a">›</div>
+    </div>
+    <div class="gcard" onclick="showScreen('rulesScreen')">
+      <div class="gc-i gc-rule">📋</div>
+      <div class="gc-info"><div class="gc-t">규칙 안내</div><div class="gc-d">바둑 · 오목 · 알까기 규칙</div></div>
+      <div class="gc-a">›</div>
+    </div>
+  </div>
+  <div class="sndbar"><span>🔊 효과음</span><div class="tgsw on" id="sndTg" onclick="tgSnd()"></div></div>
+</div>
+
+<!-- BADUK MENU -->
+<div class="screen center hidden" id="badukMenu">
+  <div class="menu-title">바둑</div>
+  <div class="menu-sub">실전 19×19 — Go</div>
+  <div class="ss">
+    <div class="sc"><div class="sl">게임 모드</div>
+      <div class="or">
+        <button class="ob sel" data-bmode="ai" onclick="bPick(this,'bmode')">🤖 1인 (vs AI)</button>
+        <button class="ob" data-bmode="2p" onclick="bPick(this,'bmode')">👥 2인 대전</button>
+      </div>
+    </div>
+    <div class="sc" id="bColorCard"><div class="sl">내 돌 색상</div>
+      <div class="or">
+        <button class="ob sel" data-bcolor="1" onclick="bPick(this,'bcolor')"><div class="dot blk"></div> 흑 (선공)</button>
+        <button class="ob" data-bcolor="2" onclick="bPick(this,'bcolor')"><div class="dot wht"></div> 백 (후공)</button>
+      </div>
+    </div>
+    <div class="sc" id="bDiffCard"><div class="sl">난이도</div>
+      <div class="or">
+        <button class="db sel" data-bdiff="1" onclick="bPick(this,'bdiff')"><span class="dlv">🎯</span>취미</button>
+        <button class="db" data-bdiff="2" onclick="bPick(this,'bdiff')"><span class="dlv">⚔️</span>고수</button>
+        <button class="db" data-bdiff="3" onclick="bPick(this,'bdiff')"><span class="dlv">🏆</span>전문가</button>
+      </div>
+    </div>
+    <button class="stb" onclick="startBaduk()">대국 시작</button>
+    <div class="backbtn" onclick="showScreen('mainMenu')">← 메인 메뉴</div>
+  </div>
+</div>
+
+<!-- OMOK MENU -->
+<div class="screen center hidden" id="omokMenu">
+  <div class="menu-title">오목</div>
+  <div class="menu-sub">OMOK — Five in a Row</div>
+  <div class="ss">
+    <div class="sc"><div class="sl">게임 모드</div>
+      <div class="or">
+        <button class="ob sel" data-omode="ai" onclick="oPick(this,'omode')">🤖 1인 (vs AI)</button>
+        <button class="ob" data-omode="2p" onclick="oPick(this,'omode')">👥 2인 대전</button>
+      </div>
+    </div>
+    <div class="sc" id="oColorCard"><div class="sl">내 돌 색상</div>
+      <div class="or">
+        <button class="ob sel" data-ocolor="1" onclick="oPick(this,'ocolor')"><div class="dot blk"></div> 흑 (선공)</button>
+        <button class="ob" data-ocolor="2" onclick="oPick(this,'ocolor')"><div class="dot wht"></div> 백 (후공)</button>
+      </div>
+    </div>
+    <div class="sc" id="oDiffCard"><div class="sl">난이도</div>
+      <div class="or">
+        <button class="db sel" data-odiff="1" onclick="oPick(this,'odiff')"><span class="dlv">🎯</span>취미</button>
+        <button class="db" data-odiff="2" onclick="oPick(this,'odiff')"><span class="dlv">⚔️</span>고수</button>
+        <button class="db" data-odiff="3" onclick="oPick(this,'odiff')"><span class="dlv">🏆</span>전문가</button>
+      </div>
+    </div>
+    <button class="stb" onclick="startOmok()">게임 시작</button>
+    <div class="backbtn" onclick="showScreen('mainMenu')">← 메인 메뉴</div>
+  </div>
+</div>
+
+<!-- ALKKAGI MENU -->
+<div class="screen center hidden" id="alkkMenu">
+  <div class="menu-title">알까기</div>
+  <div class="menu-sub">STONE FLICK</div>
+  <div class="ss">
+    <div class="sc"><div class="sl">게임 모드</div>
+      <div class="or">
+        <button class="ob sel" data-amode="ai" onclick="aPick(this,'amode')">🤖 1인 (vs AI)</button>
+        <button class="ob" data-amode="2p" onclick="aPick(this,'amode')">👥 2인 대전</button>
+      </div>
+    </div>
+    <div class="sc" id="aDiffCard"><div class="sl">난이도</div>
+      <div class="or">
+        <button class="db sel" data-adiff="1" onclick="aPick(this,'adiff')"><span class="dlv">🎯</span>취미</button>
+        <button class="db" data-adiff="2" onclick="aPick(this,'adiff')"><span class="dlv">⚔️</span>고수</button>
+        <button class="db" data-adiff="3" onclick="aPick(this,'adiff')"><span class="dlv">🏆</span>전문가</button>
+      </div>
+    </div>
+    <div class="sc"><div class="sl">돌 개수</div>
+      <div class="or">
+        <button class="db sel" data-acount="5" onclick="aPick(this,'acount')"><span class="dlv">5</span>5개</button>
+        <button class="db" data-acount="8" onclick="aPick(this,'acount')"><span class="dlv">8</span>8개</button>
+        <button class="db" data-acount="12" onclick="aPick(this,'acount')"><span class="dlv">12</span>12개</button>
+      </div>
+    </div>
+    <button class="stb" onclick="startAlkkagi()">게임 시작</button>
+    <div class="backbtn" onclick="showScreen('mainMenu')">← 메인 메뉴</div>
+  </div>
+</div>
+
+<!-- BADUK GAME -->
+<div class="gs" id="badukGame">
+  <div class="tb">
+    <button class="bb" onclick="hideGame('badukGame');showScreen('mainMenu')">← 메뉴</button>
+    <div class="dbg" id="bDiffBadge">🎯 취미</div>
+    <div class="mvb" id="bMoveCount">0수</div>
+  </div>
+  <div class="pls">
+    <div class="pc active" id="bBlackInfo"><span class="si blk"></span><span class="pn" id="bBlackLabel">나</span><span class="cap" id="bBlackCap"></span></div>
+    <span class="vst">VS</span>
+    <div class="pc" id="bWhiteInfo"><span class="si wht"></span><span class="pn" id="bWhiteLabel">AI</span><span class="cap" id="bWhiteCap"></span></div>
+  </div>
+  <div class="bf"><div class="bi"><canvas id="badukBoard"></canvas></div></div>
+  <div class="thb"><div class="rw" id="bRobotW"><svg class="rc" viewBox="0 0 80 80" fill="none"><g class="ra"><rect x="37" y="8" width="6" height="14" rx="3" fill="#6a6258"/><circle class="rl" cx="40" cy="6" r="5" fill="#c04030"/></g><rect x="14" y="22" width="52" height="38" rx="12" fill="#5a5048"/><rect x="18" y="26" width="44" height="30" rx="9" fill="#6a6258"/><g class="rel"><rect x="26" y="34" width="10" height="13" rx="4" fill="#2a2420"/><circle cx="30" cy="38" r="2.5" fill="#d4a843"/></g><g class="rer"><rect x="44" y="34" width="10" height="13" rx="4" fill="#2a2420"/><circle cx="48" cy="38" r="2.5" fill="#d4a843"/></g><rect x="32" y="50" width="16" height="3" rx="1.5" fill="#5a5048"/><rect x="24" y="62" width="32" height="14" rx="6" fill="#5a5048"/></svg><div class="rt">생각 중<span class="td"><span>.</span><span>.</span><span>.</span></span></div></div></div>
+  <div class="msg" id="bMessage"></div>
+  <div class="score-bar" id="bScoreBar" style="display:none"><span id="bScoreB"></span><span id="bScoreW"></span></div>
+  <div class="br" id="bBtns">
+    <button class="gb" onclick="badukPass()">⏭️ 패스</button>
+    <button class="gb" onclick="badukUndo()">↩️ 무르기</button>
+    <button class="gb" onclick="startBaduk()">🔄 다시</button>
+  </div>
+  <div class="br" id="bMarkBtns" style="display:none">
+    <button class="gb" onclick="bConfirmScore()">✅ 점수 확정</button>
+    <button class="gb" onclick="bCancelMark()">↩️ 다시 두기</button>
+  </div>
+</div>
+
+<!-- OMOK GAME -->
+<div class="gs" id="omokGame">
+  <div class="tb">
+    <button class="bb" onclick="hideGame('omokGame');showScreen('mainMenu')">← 메뉴</button>
+    <div class="dbg" id="oDiffBadge">🎯 취미</div>
+    <div class="mvb" id="oMoveCount">0수</div>
+  </div>
+  <div class="pls">
+    <div class="pc active" id="oBlackInfo"><span class="si blk"></span><span class="pn" id="oBlackLabel">나</span></div>
+    <span class="vst">VS</span>
+    <div class="pc" id="oWhiteInfo"><span class="si wht"></span><span class="pn" id="oWhiteLabel">AI</span></div>
+  </div>
+  <div class="bf"><div class="bi"><canvas id="omokBoard"></canvas></div></div>
+  <div class="thb"><div class="rw" id="oRobotW"><svg class="rc" viewBox="0 0 80 80" fill="none"><g class="ra"><rect x="37" y="8" width="6" height="14" rx="3" fill="#6a6258"/><circle class="rl" cx="40" cy="6" r="5" fill="#c04030"/></g><rect x="14" y="22" width="52" height="38" rx="12" fill="#5a5048"/><rect x="18" y="26" width="44" height="30" rx="9" fill="#6a6258"/><g class="rel"><rect x="26" y="34" width="10" height="13" rx="4" fill="#2a2420"/><circle cx="30" cy="38" r="2.5" fill="#d4a843"/></g><g class="rer"><rect x="44" y="34" width="10" height="13" rx="4" fill="#2a2420"/><circle cx="48" cy="38" r="2.5" fill="#d4a843"/></g><rect x="32" y="50" width="16" height="3" rx="1.5" fill="#5a5048"/><rect x="24" y="62" width="32" height="14" rx="6" fill="#5a5048"/></svg><div class="rt">생각 중<span class="td"><span>.</span><span>.</span><span>.</span></span></div></div></div>
+  <div class="msg" id="oMessage"></div>
+  <div class="br">
+    <button class="gb" onclick="omokUndo()">↩️ 무르기</button>
+    <button class="gb" onclick="startOmok()">🔄 다시</button>
+  </div>
+</div>
+
+<!-- ALKKAGI GAME -->
+<div class="gs" id="alkkGame">
+  <div class="tb">
+    <button class="bb" onclick="hideGame('alkkGame');showScreen('mainMenu')">← 메뉴</button>
+    <div class="dbg" id="aDiffBadge">🎯 취미</div>
+    <div class="mvb" id="aStoneCount">흑 5 vs 백 5</div>
+  </div>
+  <div class="pls">
+    <div class="pc active" id="aBlackInfo"><span class="si blk"></span><span class="pn" id="aBlackLabel">나</span></div>
+    <span class="vst">VS</span>
+    <div class="pc" id="aWhiteInfo"><span class="si wht"></span><span class="pn" id="aWhiteLabel">AI</span></div>
+  </div>
+  <div class="bf"><div class="bi"><canvas id="alkkBoard"></canvas></div></div>
+  <div class="alkkagi-info" id="alkkInfo">돌을 드래그하여 튕기세요!</div>
+  <div class="power-bar-wrap" id="powerWrap"><div class="power-bar-fill" id="powerFill"></div></div>
+  <div class="thb"><div class="rw" id="aRobotW"><svg class="rc" viewBox="0 0 80 80" fill="none"><g class="ra"><rect x="37" y="8" width="6" height="14" rx="3" fill="#6a6258"/><circle class="rl" cx="40" cy="6" r="5" fill="#c04030"/></g><rect x="14" y="22" width="52" height="38" rx="12" fill="#5a5048"/><rect x="18" y="26" width="44" height="30" rx="9" fill="#6a6258"/><g class="rel"><rect x="26" y="34" width="10" height="13" rx="4" fill="#2a2420"/><circle cx="30" cy="38" r="2.5" fill="#d4a843"/></g><g class="rer"><rect x="44" y="34" width="10" height="13" rx="4" fill="#2a2420"/><circle cx="48" cy="38" r="2.5" fill="#d4a843"/></g><rect x="32" y="50" width="16" height="3" rx="1.5" fill="#5a5048"/><rect x="24" y="62" width="32" height="14" rx="6" fill="#5a5048"/></svg><div class="rt">생각 중<span class="td"><span>.</span><span>.</span><span>.</span></span></div></div></div>
+  <div class="msg" id="aMessage"></div>
+  <div class="br">
+    <button class="gb" onclick="startAlkkagi()">🔄 다시</button>
+  </div>
+</div>
+
+<!-- TUTORIAL MENU (Level 1) -->
+<div class="tut-screen hidden" id="tutMenu">
+  <div class="tut-header"><button class="bb" onclick="showScreen('mainMenu');document.getElementById('tutMenu').classList.add('hidden')">← 뒤로</button><div class="tut-header-title">바둑 배우기</div></div>
+  <div class="tut-body" id="tutBody"></div>
+</div>
+
+<!-- SUB-CATEGORY (Level 2) -->
+<div class="tut-screen hidden" id="subCatScreen">
+  <div class="tut-header"><button class="bb" onclick="backToTutMenu()">← 뒤로</button><div class="tut-header-title" id="subCatTitle">초급 과정</div></div>
+  <div class="tut-body" id="subCatBody"></div>
+</div>
+
+<!-- LESSON LIST (Level 3) -->
+<div class="tut-screen hidden" id="lessonListScreen">
+  <div class="tut-header"><button class="bb" onclick="backToSubCat()">← 뒤로</button><div class="tut-header-title" id="lessonListTitle">기본 규칙</div></div>
+  <div class="tut-body" id="lessonListBody"></div>
+</div>
+
+<!-- LESSON VIEW -->
+<div class="lesson-screen hidden" id="lessonScreen">
+  <div class="tut-header"><button class="bb" onclick="closeLesson()">← 목록</button><div class="tut-header-title" id="lessonHeader">기초 1</div></div>
+  <div class="lesson-body" id="lessonBody"></div>
+</div>
+
+<!-- RULES -->
+<div class="tut-screen hidden" id="rulesScreen">
+  <div class="tut-header"><button class="bb" onclick="showScreen('mainMenu');document.getElementById('rulesScreen').classList.add('hidden')">← 뒤로</button><div class="tut-header-title">규칙 안내</div></div>
+  <div class="rules-body" id="rulesBody"></div>
+</div>
+
+<!-- PWA INSTALL BANNER -->
+<div class="install-banner" id="installBanner">
+  <div class="install-title">홈 화면에 추가</div>
+  <div class="install-desc">고수의 바둑판을 앱처럼 사용하세요</div>
+  <div class="install-btns">
+    <button class="install-btn primary" id="installBtn" onclick="installApp()">설치</button>
+    <button class="install-btn secondary" onclick="dismissInstall()">나중에</button>
+  </div>
+</div>
+
+<script>
+// ===================== AUDIO =====================
+let actx=null,sndOn=true;
+function gac(){if(!actx)actx=new(window.AudioContext||window.webkitAudioContext);if(actx.state==='suspended')actx.resume();return actx;}
+function tgSnd(){sndOn=!sndOn;document.querySelectorAll('.tgsw').forEach(e=>e.classList.toggle('on',sndOn));}
+function playNote(f,dur,type,vol,del){if(!sndOn)return;try{const c=gac(),t=c.currentTime+(del||0),o=c.createOscillator(),g=c.createGain();o.type=type||'sine';o.frequency.setValueAtTime(f,t);g.gain.setValueAtTime(vol||.15,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(c.destination);o.start(t);o.stop(t+dur);}catch(e){}}
+function playStone(){if(!sndOn)return;try{const c=gac(),t=c.currentTime;const buf=c.createBuffer(1,c.sampleRate*.08,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++){const e=Math.exp(-i/(c.sampleRate*.012));d[i]=(Math.random()*2-1)*e*.5;}for(let i=0;i<d.length;i++){const e=Math.exp(-i/(c.sampleRate*.015));d[i]+=Math.sin(i/c.sampleRate*Math.PI*2*850)*e*.3;}const src=c.createBufferSource();src.buffer=buf;const fl=c.createBiquadFilter();fl.type='bandpass';fl.frequency.value=1500;fl.Q.value=2;const g=c.createGain();g.gain.value=.6;src.connect(fl);fl.connect(g);g.connect(c.destination);src.start(t);}catch(e){}}
+let _lastCaptureT=0;function playCapture(){if(!sndOn)return;const now=performance.now();if(now-_lastCaptureT<100)return;_lastCaptureT=now;try{const c=gac(),t=c.currentTime;const buf=c.createBuffer(1,c.sampleRate*.15,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++){const e=Math.exp(-i/(c.sampleRate*.03));d[i]=(Math.random()*2-1)*e*.5;}for(let i=0;i<d.length;i++){const e=Math.exp(-i/(c.sampleRate*.04));d[i]+=Math.sin(i/c.sampleRate*Math.PI*2*400)*e*.25;}const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=.4;src.connect(g);g.connect(c.destination);src.start(t);}catch(e){}}
+function playFlick(){if(!sndOn)return;try{const c=gac(),t=c.currentTime;const buf=c.createBuffer(1,c.sampleRate*.12,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++){const e=Math.exp(-i/(c.sampleRate*.025));d[i]=(Math.random()*2-1)*e*.35+Math.sin(i/c.sampleRate*Math.PI*2*500)*e*.25;}const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=.5;src.connect(g);g.connect(c.destination);src.start(t);}catch(e){}}
+let _lastCollideT=0;function playCollide(){if(!sndOn)return;const now=performance.now();if(now-_lastCollideT<120)return;_lastCollideT=now;try{const c=gac(),t=c.currentTime;const buf=c.createBuffer(1,c.sampleRate*.04,c.sampleRate),d=buf.getChannelData(0);for(let i=0;i<d.length;i++){const e=Math.exp(-i/(c.sampleRate*.008));d[i]=(Math.random()*2-1)*e*.2+Math.sin(i/c.sampleRate*Math.PI*2*900)*e*.15;}const src=c.createBufferSource();src.buffer=buf;const g=c.createGain();g.gain.value=.2;src.connect(g);g.connect(c.destination);src.start(t);}catch(e){}}
+function playWin(){[523,659,784,880,1047].forEach((f,i)=>{playNote(f,.35,'sine',.15,i*.12);});setTimeout(()=>{playNote(523,.8,'sine',.1,0);playNote(784,.8,'sine',.08,0);},600);}
+function playLose(){[440,415,370,330,262].forEach((f,i)=>{playNote(f,.4,'sine',.12,i*.18);});}
+function playStart(){playNote(660,.12,'sine',.08,0);playNote(880,.16,'sine',.1,.1);}
+
+// ===================== NAV =====================
+setTimeout(()=>{document.getElementById('splash').classList.add('hide');document.getElementById('mainMenu').style.display='flex';setTimeout(()=>document.getElementById('splash').style.display='none',800);},1500);
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>{s.classList.add('hidden');setTimeout(()=>{if(s.classList.contains('hidden'))s.style.display='none';},400);});
+  document.querySelectorAll('.gs').forEach(g=>g.classList.remove('visible'));
+  const t=document.getElementById(id);t.style.display='flex';requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.remove('hidden')));
+}
+function showMenu(g){playNote(660,.08,'sine',.06,0);showScreen(g==='baduk'?'badukMenu':g==='omok'?'omokMenu':'alkkMenu');}
+function hideGame(id){document.getElementById(id).classList.remove('visible');}
+
+// ===================== SHARED DRAWING =====================
+function drawBoard(ctx,SIZE,GRID,CELL,PAD){
+  ctx.clearRect(0,0,SIZE,SIZE);
+  const bg=ctx.createRadialGradient(SIZE/2,SIZE/2,10,SIZE/2,SIZE/2,SIZE*.72);bg.addColorStop(0,'#dbb648');bg.addColorStop(1,'#c8a038');ctx.fillStyle=bg;ctx.fillRect(0,0,SIZE,SIZE);
+  ctx.save();ctx.globalAlpha=.06;ctx.strokeStyle='#7a5c18';for(let i=0;i<SIZE;i+=3.5){ctx.beginPath();ctx.moveTo(0,i+Math.sin(i*.01)*2);ctx.lineTo(SIZE,i+Math.cos(i*.01+1)*2);ctx.stroke();}ctx.restore();
+  ctx.strokeStyle='rgba(40,28,8,.6)';ctx.lineWidth=1;for(let i=0;i<GRID;i++){const p=PAD+i*CELL;ctx.beginPath();ctx.moveTo(PAD,p);ctx.lineTo(PAD+(GRID-1)*CELL,p);ctx.stroke();ctx.beginPath();ctx.moveTo(p,PAD);ctx.lineTo(p,PAD+(GRID-1)*CELL);ctx.stroke();}
+  ctx.strokeStyle='rgba(40,28,8,.75)';ctx.lineWidth=2;ctx.strokeRect(PAD,PAD,(GRID-1)*CELL,(GRID-1)*CELL);
+  let sp;if(GRID===9)sp=[2,4,6];else if(GRID===13)sp=[3,6,9];else if(GRID===15)sp=[3,7,11];else sp=[3,9,15];
+  ctx.fillStyle='rgba(40,28,8,.6)';for(const r of sp)for(const c of sp){if(r<GRID&&c<GRID){ctx.beginPath();ctx.arc(PAD+c*CELL,PAD+r*CELL,GRID>=19?3:2.5,0,Math.PI*2);ctx.fill();}}
+  ctx.fillStyle='rgba(60,45,15,.25)';ctx.font=`500 ${Math.max(7,CELL*.22)}px 'Noto Sans KR',sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+  const lt='ABCDEFGHJKLMNOPQRST';for(let i=0;i<GRID;i++){ctx.fillText(lt[i],PAD+i*CELL,PAD-CELL*.55);ctx.fillText(GRID-i,PAD-CELL*.55,PAD+i*CELL);}
+}
+function drawStone(ctx,x,y,pl,CELL,glow){
+  const r=CELL*.44;if(glow){ctx.save();ctx.shadowColor='rgba(212,168,67,.6)';ctx.shadowBlur=14;}
+  ctx.fillStyle='rgba(0,0,0,.15)';ctx.beginPath();ctx.ellipse(x+1.5,y+2.5,r*.92,r*.82,0,0,Math.PI*2);ctx.fill();
+  if(pl===1){const g=ctx.createRadialGradient(x-r*.3,y-r*.35,r*.08,x+r*.05,y+r*.05,r);g.addColorStop(0,'#5a5a5a');g.addColorStop(.25,'#3a3a3a');g.addColorStop(.6,'#1e1e1e');g.addColorStop(1,'#080808');ctx.fillStyle=g;}
+  else{const g=ctx.createRadialGradient(x-r*.3,y-r*.35,r*.05,x+r*.1,y+r*.1,r*1.05);g.addColorStop(0,'#fff');g.addColorStop(.25,'#faf6ee');g.addColorStop(.6,'#e8e0d0');g.addColorStop(1,'#ccc4b4');ctx.fillStyle=g;}
+  ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  if(pl===2){ctx.strokeStyle='rgba(0,0,0,.06)';ctx.lineWidth=.6;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.stroke();}
+  const sg=ctx.createRadialGradient(x-r*.28,y-r*.28,0,x-r*.28,y-r*.28,r*.42);sg.addColorStop(0,pl===1?'rgba(255,255,255,.2)':'rgba(255,255,255,.6)');sg.addColorStop(1,'rgba(255,255,255,0)');ctx.fillStyle=sg;ctx.beginPath();ctx.arc(x,y,r,0,Math.PI*2);ctx.fill();
+  if(glow)ctx.restore();
+}
+function calcBoard(GRID,maxW){
+  const maxCell=GRID<=9?44:GRID<=13?34:GRID<=15?28:24;
+  const CELL=Math.min(Math.floor((Math.min(maxW,600)-28)/(GRID-1)),maxCell);
+  const PAD=Math.floor(CELL*.82);const SIZE=CELL*(GRID-1)+PAD*2;return{CELL,PAD,SIZE};
+}
+
+// ===================== BADUK =====================
+const bCfg={mode:'ai',myColor:1,difficulty:1,size:19};
+let bBoard,bHist,bCur,bOver,bPass,bCapB,bCapW,bHover,bAiT,bKo,bMarking=false,bDead=new Set();
+const bCanvas=document.getElementById('badukBoard'),bCtx=bCanvas.getContext('2d');
+let bGRID=19,bB;
+function bPick(el,attr){document.querySelectorAll(`[data-${attr}]`).forEach(e=>e.classList.remove('sel'));el.classList.add('sel');
+  if(attr==='bmode'){bCfg.mode=el.dataset.bmode;const s=bCfg.mode==='ai';document.getElementById('bColorCard').style.display=s?'':'none';document.getElementById('bDiffCard').style.display=s?'':'none';}
+  if(attr==='bcolor')bCfg.myColor=parseInt(el.dataset.bcolor);if(attr==='bdiff')bCfg.difficulty=parseInt(el.dataset.bdiff);}
+function startBaduk(){playStart();document.querySelectorAll('.screen').forEach(s=>{s.classList.add('hidden');s.style.display='none';});
+  document.getElementById('badukGame').classList.add('visible');bGRID=19;bB=calcBoard(bGRID,window.innerWidth);bCanvas.width=bB.SIZE;bCanvas.height=bB.SIZE;initBaduk();}
+function initBaduk(){
+  bBoard=Array.from({length:bGRID},()=>Array(bGRID).fill(0));bHist=[];bCur=1;bOver=false;bPass=0;bCapB=0;bCapW=0;bHover=null;bAiT=false;bKo=null;bMarking=false;bDead=new Set();
+  document.getElementById('bBtns').style.display='';document.getElementById('bMarkBtns').style.display='none';document.getElementById('bScoreBar').style.display='none';
+  const isAI=bCfg.mode==='ai',dn=['','🎯 취미','⚔️ 고수','🏆 전문가'];
+  if(isAI){document.getElementById('bBlackLabel').textContent=bCfg.myColor===1?'나':'AI';document.getElementById('bWhiteLabel').textContent=bCfg.myColor===2?'나':'AI';document.getElementById('bDiffBadge').textContent=dn[bCfg.difficulty];}
+  else{document.getElementById('bBlackLabel').textContent='P1';document.getElementById('bWhiteLabel').textContent='P2';document.getElementById('bDiffBadge').textContent='👥 2인';}
+  document.getElementById('bMessage').textContent='';document.getElementById('bMessage').className='msg';document.getElementById('bRobotW').classList.remove('on');
+  bUpUI();bDraw();if(isAI&&bCfg.myColor===2)setTimeout(()=>bAiMove(),500);}
+function bUpUI(){document.getElementById('bBlackInfo').classList.toggle('active',bCur===1);document.getElementById('bWhiteInfo').classList.toggle('active',bCur===2);document.getElementById('bMoveCount').textContent=bHist.length+'수';document.getElementById('bBlackCap').textContent=bCapB?`(${bCapB})`:'';document.getElementById('bWhiteCap').textContent=bCapW?`(${bCapW})`:'';}
+function bMyTurn(){return bCfg.mode==='2p'||bCur===bCfg.myColor;}
+
+// GO LOGIC
+function bGetGroup(r,c,board){const color=board[r][c];if(!color)return{stones:[],liberties:new Set()};const visited=new Set(),stones=[],liberties=new Set();const stack=[[r,c]];while(stack.length){const[cr,cc]=stack.pop();const key=cr*bGRID+cc;if(visited.has(key))continue;visited.add(key);if(board[cr][cc]===color){stones.push({row:cr,col:cc});for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=cr+dr,nc=cc+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;const nk=nr*bGRID+nc;if(visited.has(nk))continue;if(board[nr][nc]===0)liberties.add(nk);else if(board[nr][nc]===color)stack.push([nr,nc]);}}}return{stones,liberties};}
+function bRemoveDead(board,opp){let captured=[];for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(board[r][c]===opp){const g=bGetGroup(r,c,board);if(g.liberties.size===0){captured.push(...g.stones);g.stones.forEach(s=>board[s.row][s.col]=0);}}}return captured;}
+function bIsLegal(r,c,pl,board){if(board[r][c])return false;const tb=board.map(row=>[...row]);tb[r][c]=pl;const opp=pl===1?2:1;bRemoveDead(tb,opp);const g=bGetGroup(r,c,tb);if(g.liberties.size===0)return false;if(bKo&&bKo.row===r&&bKo.col===c)return false;return true;}
+function bPlace(r,c){if(bOver||!bIsLegal(r,c,bCur,bBoard))return false;bBoard[r][c]=bCur;const opp=bCur===1?2:1;const captured=bRemoveDead(bBoard,opp);if(captured.length>0){playCapture();if(bCur===1)bCapB+=captured.length;else bCapW+=captured.length;}else playStone();if(captured.length===1){const g=bGetGroup(r,c,bBoard);if(g.stones.length===1&&g.liberties.size===1)bKo={row:captured[0].row,col:captured[0].col};else bKo=null;}else bKo=null;bHist.push({row:r,col:c,player:bCur,captured,ko:bKo?{...bKo}:null});bPass=0;bCur=opp;bUpUI();bDraw();return true;}
+function badukPass(){if(bOver||bAiT||bMarking||!bMyTurn())return;bPass++;bKo=null;bHist.push({row:-1,col:-1,player:bCur,captured:[],ko:null});playNote(440,.1,'sine',.08,0);if(bPass>=2){bMarking=true;document.getElementById('bBtns').style.display='none';document.getElementById('bMarkBtns').style.display='';document.getElementById('bMessage').textContent='죽은 돌을 클릭하세요';document.getElementById('bMessage').className='msg';bAutoMarkDead();bDrawMarking();return;}bCur=bCur===1?2:1;bUpUI();bDraw();if(bCfg.mode==='ai'&&!bOver&&!bMyTurn())bAiMove();}
+function bAutoMarkDead(){bDead=new Set();for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(!bBoard[r][c])continue;const g=bGetGroup(r,c,bBoard);if(g.liberties.size<=1&&g.stones.length<=3){const opp=bBoard[r][c]===1?2:1;let oppC=0,tot=0;for(const s of g.stones){for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=s.row+dr,nc=s.col+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID){tot++;oppC++;continue;}if(bBoard[nr][nc]===opp){tot++;oppC++;}else if(bBoard[nr][nc]!==0)tot++;}}if(oppC>tot*0.6)g.stones.forEach(s=>bDead.add(s.row*bGRID+s.col));}}}
+function bToggleDead(r,c){if(!bBoard[r][c])return;const g=bGetGroup(r,c,bBoard);const k=r*bGRID+c;const isDead=bDead.has(k);g.stones.forEach(s=>{const kk=s.row*bGRID+s.col;if(isDead)bDead.delete(kk);else bDead.add(kk);});bDrawMarking();}
+function bConfirmScore(){bMarking=false;bOver=true;document.getElementById('bMarkBtns').style.display='none';bEndGame();bDraw();}
+function bCancelMark(){bMarking=false;bDead=new Set();bPass=0;document.getElementById('bMarkBtns').style.display='none';document.getElementById('bBtns').style.display='';document.getElementById('bScoreBar').style.display='none';document.getElementById('bMessage').textContent='';document.getElementById('bMessage').className='msg';while(bHist.length&&bHist[bHist.length-1].row===-1)bHist.pop();bCur=bHist.length?bHist[bHist.length-1].player===1?2:1:1;bUpUI();bDraw();}
+function bEndGame(){const sB=bBoard.map(r=>[...r]);let dB=0,dW=0;for(const k of bDead){const r=Math.floor(k/bGRID),c=k%bGRID;if(sB[r][c]===1)dB++;if(sB[r][c]===2)dW++;sB[r][c]=0;}const terr=Array.from({length:bGRID},()=>Array(bGRID).fill(0));for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(sB[r][c])continue;const vis=new Set(),stk=[[r,c]];let tB=false,tW=false;const cells=[];while(stk.length){const[cr,cc]=stk.pop();const k=cr*bGRID+cc;if(vis.has(k))continue;vis.add(k);if(sB[cr][cc]===1){tB=true;continue;}if(sB[cr][cc]===2){tW=true;continue;}cells.push([cr,cc]);for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=cr+dr,nc=cc+dc;if(nr>=0&&nr<bGRID&&nc>=0&&nc<bGRID)stk.push([nr,nc]);}}const ow=tB&&!tW?1:tW&&!tB?2:0;cells.forEach(([cr,cc])=>terr[cr][cc]=ow);}let bS=bCapB+dW,wS=bCapW+dB+6.5;for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(terr[r][c]===1||sB[r][c]===1)bS++;if(terr[r][c]===2||sB[r][c]===2)wS++;}let msg;if(bCfg.mode==='2p'){msg=bS>wS?`🎉 흑 승! (${bS} vs ${wS})`:`🎉 백 승! (${wS} vs ${bS})`;}else{const myS=bCfg.myColor===1?bS:wS,aiS=bCfg.myColor===1?wS:bS;if(myS>aiS){msg=`🎉 승리! (${myS} vs ${aiS})`;setTimeout(playWin,300);}else{msg=`😱 AI 승리! (${aiS} vs ${myS})`;setTimeout(playLose,300);}}document.getElementById('bMessage').textContent=msg;document.getElementById('bMessage').className='msg win';}
+function badukUndo(){if(bAiT||bOver)return;if(!bHist.length)return;if(bCfg.mode==='ai'&&bHist.length>=2){for(let i=0;i<2&&bHist.length;i++){const m=bHist.pop();if(m.row>=0)bBoard[m.row][m.col]=0;m.captured.forEach(s=>bBoard[s.row][s.col]=m.player===1?2:1);if(m.player===1)bCapB-=m.captured.length;else bCapW-=m.captured.length;}bCur=bCfg.myColor;}else{const m=bHist.pop();if(m.row>=0)bBoard[m.row][m.col]=0;m.captured.forEach(s=>bBoard[s.row][s.col]=m.player===1?2:1);if(m.player===1)bCapB-=m.captured.length;else bCapW-=m.captured.length;bCur=m.player;}bKo=bHist.length?bHist[bHist.length-1].ko:null;bPass=0;bUpUI();bDraw();}
+
+// BADUK AI
+function bAiMove(){bAiT=true;document.getElementById('bRobotW').classList.add('on');setTimeout(()=>{const mv=bBestMove();if(mv){bPlace(mv.row,mv.col);}else{bPass++;bKo=null;bHist.push({row:-1,col:-1,player:bCur,captured:[],ko:null});playNote(440,.1,'sine',.08,0);if(bPass>=2){bMarking=true;document.getElementById('bBtns').style.display='none';document.getElementById('bMarkBtns').style.display='';document.getElementById('bMessage').textContent='죽은 돌을 클릭하세요';bAutoMarkDead();bDrawMarking();}else{bCur=bCur===1?2:1;bUpUI();bDraw();}}bAiT=false;document.getElementById('bRobotW').classList.remove('on');},300+bCfg.difficulty*250+Math.random()*400);}
+function bWouldCapture(r,c,pl){const opp=pl===1?2:1;let cnt=0;const tb=bBoard.map(row=>[...row]);tb[r][c]=pl;for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;if(tb[nr][nc]===opp){const g=bGetGroup(nr,nc,tb);if(g.liberties.size===0)cnt+=g.stones.length;}}return cnt;}
+function bWouldSave(r,c,pl){for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;if(bBoard[nr][nc]===pl){const g=bGetGroup(nr,nc,bBoard);if(g.liberties.size===1)return true;}}return false;}
+function bIsOwnEye(r,c,pl){let ap=0,at=0;for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID){ap++;at++;continue;}at++;if(bBoard[nr][nc]===pl)ap++;}if(ap<at)return false;let dg=0,dt=0;for(const[dr,dc]of[[1,1],[1,-1],[-1,1],[-1,-1]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID){dg++;dt++;continue;}dt++;if(bBoard[nr][nc]===pl)dg++;}return dg>=dt-1;}
+function bBestMove(){const diff=bCfg.difficulty,pl=bCur,opp=pl===1?2:1;const legal=[];for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(bIsLegal(r,c,pl,bBoard))legal.push({row:r,col:c});}if(!legal.length)return null;const safe=legal.filter(m=>!bIsOwnEye(m.row,m.col,pl));const cands=safe.length?safe:legal;
+  if(diff===1){const caps=cands.filter(m=>bWouldCapture(m.row,m.col,pl)>0);if(caps.length&&Math.random()<.7)return caps[Math.floor(Math.random()*caps.length)];const saves=cands.filter(m=>bWouldSave(m.row,m.col,pl));if(saves.length&&Math.random()<.5)return saves[Math.floor(Math.random()*saves.length)];return cands[Math.floor(Math.random()*cands.length)];}
+  let scored=[];for(const m of cands){scored.push({...m,score:bEvalMove(m.row,m.col,pl,diff)});}scored.sort((a,b)=>b.score-a.score);
+  if(bHist.length>bGRID*bGRID*.4&&scored[0].score<5)return null;
+  if(diff===2&&Math.random()<.1&&scored.length>2)return scored[Math.floor(Math.random()*Math.min(4,scored.length))];
+  const top=scored[0].score;return scored.filter(m=>m.score>=top*.93)[Math.floor(Math.random()*scored.filter(m=>m.score>=top*.93).length)];}
+function bEvalMove(r,c,pl,diff){let s=0;const opp=pl===1?2:1,mid=Math.floor(bGRID/2);s+=bWouldCapture(r,c,pl)*(diff>=3?100:60);
+  for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;if(bBoard[nr][nc]===opp){const g=bGetGroup(nr,nc,bBoard);if(g.liberties.size===2)s+=diff>=3?40:22;if(g.liberties.size===1)s+=diff>=3?70:45;}if(bBoard[nr][nc]===pl){const g=bGetGroup(nr,nc,bBoard);if(g.liberties.size===1)s+=g.stones.length*(diff>=3?55:35);if(g.liberties.size===2&&diff>=3)s+=g.stones.length*10;}}
+  if(diff>=2){let og=new Set();for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;if(bBoard[nr][nc]===pl)og.add(bGetGroup(nr,nc,bBoard).stones.map(s=>s.row*bGRID+s.col).sort().join(','));}if(og.size>=2)s+=og.size*18;}
+  if(diff>=3){let og2=new Set();for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;if(bBoard[nr][nc]===opp)og2.add(bGetGroup(nr,nc,bBoard).stones.map(s=>s.row*bGRID+s.col).sort().join(','));}if(og2.size>=2)s+=og2.size*14;}
+  if(bHist.length<bGRID*2){const sp=[3,9,15];if(sp.includes(r)&&sp.includes(c))s+=22;const fe=Math.min(r,c,bGRID-1-r,bGRID-1-c);if(fe===2||fe===3)s+=12;if(fe<=1)s-=10;}
+  if(diff>=2){const rng=diff>=3?3:2;let own=0,oN=0;for(let dr=-rng;dr<=rng;dr++)for(let dc=-rng;dc<=rng;dc++){if(!dr&&!dc)continue;const nr=r+dr,nc=c+dc;if(nr<0||nr>=bGRID||nc<0||nc>=bGRID)continue;const d=Math.abs(dr)+Math.abs(dc);if(bBoard[nr][nc]===pl)own+=rng+1-d;if(bBoard[nr][nc]===opp)oN+=rng+1-d;}s+=own*3.5+oN*2.5;}
+  if(diff>=3){const tb=bBoard.map(row=>[...row]);tb[r][c]=pl;bRemoveDead(tb,opp);const g=bGetGroup(r,c,tb);s+=g.liberties.size*5;if(g.liberties.size<=1)s-=25;}
+  const dist=Math.abs(r-mid)+Math.abs(c-mid);s+=Math.max(0,(bGRID-dist))*(diff>=3?2.5:1.5);if(r===0||r===bGRID-1||c===0||c===bGRID-1)s-=(diff>=3?12:6);return s;}
+
+// BADUK DRAW
+function bDraw(){drawBoard(bCtx,bB.SIZE,bGRID,bB.CELL,bB.PAD);for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(bBoard[r][c])drawStone(bCtx,bB.PAD+c*bB.CELL,bB.PAD+r*bB.CELL,bBoard[r][c],bB.CELL,false);}if(bHist.length){const l=bHist[bHist.length-1];if(l.row>=0){bCtx.save();bCtx.shadowColor='rgba(220,50,50,.5)';bCtx.shadowBlur=5;bCtx.fillStyle='#c04030';bCtx.beginPath();bCtx.arc(bB.PAD+l.col*bB.CELL,bB.PAD+l.row*bB.CELL,3.5,0,Math.PI*2);bCtx.fill();bCtx.restore();}}if(bHover&&!bOver&&!bMarking&&!bAiT&&bMyTurn()&&bIsLegal(bHover.row,bHover.col,bCur,bBoard)){bCtx.globalAlpha=.3;drawStone(bCtx,bB.PAD+bHover.col*bB.CELL,bB.PAD+bHover.row*bB.CELL,bCur,bB.CELL,false);bCtx.globalAlpha=1;}}
+function bDrawMarking(){drawBoard(bCtx,bB.SIZE,bGRID,bB.CELL,bB.PAD);const sB=bBoard.map(r=>[...r]);let dB=0,dW=0;for(const k of bDead){const r=Math.floor(k/bGRID),c=k%bGRID;if(sB[r][c]===1)dB++;if(sB[r][c]===2)dW++;sB[r][c]=0;}const terr=Array.from({length:bGRID},()=>Array(bGRID).fill(0));for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(sB[r][c])continue;const vis=new Set(),stk=[[r,c]];let tB=false,tW=false;const cells=[];while(stk.length){const[cr,cc]=stk.pop();const k=cr*bGRID+cc;if(vis.has(k))continue;vis.add(k);if(sB[cr][cc]===1){tB=true;continue;}if(sB[cr][cc]===2){tW=true;continue;}cells.push([cr,cc]);for(const[dr,dc]of[[0,1],[0,-1],[1,0],[-1,0]]){const nr=cr+dr,nc=cc+dc;if(nr>=0&&nr<bGRID&&nc>=0&&nc<bGRID)stk.push([nr,nc]);}}const ow=tB&&!tW?1:tW&&!tB?2:0;cells.forEach(([cr,cc])=>terr[cr][cc]=ow);}const ts=bB.CELL*.16;for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){const x=bB.PAD+c*bB.CELL,y=bB.PAD+r*bB.CELL;if(terr[r][c]===1){bCtx.fillStyle='rgba(0,0,0,.18)';bCtx.fillRect(x-ts,y-ts,ts*2,ts*2);}if(terr[r][c]===2){bCtx.fillStyle='rgba(255,255,255,.4)';bCtx.fillRect(x-ts,y-ts,ts*2,ts*2);}}for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(!bBoard[r][c])continue;const x=bB.PAD+c*bB.CELL,y=bB.PAD+r*bB.CELL;const isDead=bDead.has(r*bGRID+c);if(isDead)bCtx.globalAlpha=.35;drawStone(bCtx,x,y,bBoard[r][c],bB.CELL,false);if(isDead){bCtx.globalAlpha=1;const xr=bB.CELL*.22;bCtx.save();bCtx.strokeStyle='#c04030';bCtx.lineWidth=2.5;bCtx.lineCap='round';bCtx.beginPath();bCtx.moveTo(x-xr,y-xr);bCtx.lineTo(x+xr,y+xr);bCtx.stroke();bCtx.beginPath();bCtx.moveTo(x+xr,y-xr);bCtx.lineTo(x-xr,y+xr);bCtx.stroke();bCtx.restore();}else bCtx.globalAlpha=1;}let bS2=bCapB+dW,wS2=bCapW+dB+6.5;for(let r=0;r<bGRID;r++)for(let c=0;c<bGRID;c++){if(terr[r][c]===1||sB[r][c]===1)bS2++;if(terr[r][c]===2||sB[r][c]===2)wS2++;}document.getElementById('bScoreBar').style.display='';document.getElementById('bScoreB').textContent=`흑 ${bS2}`;document.getElementById('bScoreW').textContent=`백 ${wS2}`;}
+function bGetPos(e){const rect=bCanvas.getBoundingClientRect(),sx=bCanvas.width/rect.width,sy=bCanvas.height/rect.height;let cx,cy;if(e.touches){cx=(e.touches[0].clientX-rect.left)*sx;cy=(e.touches[0].clientY-rect.top)*sy;}else{cx=(e.clientX-rect.left)*sx;cy=(e.clientY-rect.top)*sy;}const col=Math.round((cx-bB.PAD)/bB.CELL),row=Math.round((cy-bB.PAD)/bB.CELL);if(col>=0&&col<bGRID&&row>=0&&row<bGRID)return{row,col};return null;}
+function bClick(e){const pos=bGetPos(e);if(!pos)return;if(bMarking){bToggleDead(pos.row,pos.col);return;}if(bOver||bAiT||!bMyTurn())return;const ok=bPlace(pos.row,pos.col);if(ok&&bCfg.mode==='ai'&&!bOver&&!bMyTurn())bAiMove();}
+bCanvas.addEventListener('mousemove',e=>{bHover=bGetPos(e);if(!bMarking)bDraw();});bCanvas.addEventListener('mouseleave',()=>{bHover=null;if(!bMarking)bDraw();});bCanvas.addEventListener('click',bClick);bCanvas.addEventListener('touchstart',e=>{e.preventDefault();bClick(e);},{passive:false});
+
+// ===================== OMOK =====================
+const oCfg={mode:'ai',myColor:1,difficulty:1};
+let oBoard,oHist,oCur,oOver,oWinC,oHover,oAiT;
+const oCanvas=document.getElementById('omokBoard'),oCtx=oCanvas.getContext('2d');
+const oGRID=15;let oB;
+function oPick(el,attr){document.querySelectorAll(`[data-${attr}]`).forEach(e=>e.classList.remove('sel'));el.classList.add('sel');if(attr==='omode'){oCfg.mode=el.dataset.omode;const s=oCfg.mode==='ai';document.getElementById('oColorCard').style.display=s?'':'none';document.getElementById('oDiffCard').style.display=s?'':'none';}if(attr==='ocolor')oCfg.myColor=parseInt(el.dataset.ocolor);if(attr==='odiff')oCfg.difficulty=parseInt(el.dataset.odiff);}
+function startOmok(){playStart();document.querySelectorAll('.screen').forEach(s=>{s.classList.add('hidden');s.style.display='none';});document.getElementById('omokGame').classList.add('visible');oB=calcBoard(oGRID,window.innerWidth);oCanvas.width=oB.SIZE;oCanvas.height=oB.SIZE;initOmok();}
+function initOmok(){oBoard=Array.from({length:oGRID},()=>Array(oGRID).fill(0));oHist=[];oCur=1;oOver=false;oWinC=[];oHover=null;oAiT=false;const isAI=oCfg.mode==='ai',dn=['','🎯 취미','⚔️ 고수','🏆 전문가'];if(isAI){document.getElementById('oBlackLabel').textContent=oCfg.myColor===1?'나':'AI';document.getElementById('oWhiteLabel').textContent=oCfg.myColor===2?'나':'AI';document.getElementById('oDiffBadge').textContent=dn[oCfg.difficulty];}else{document.getElementById('oBlackLabel').textContent='P1';document.getElementById('oWhiteLabel').textContent='P2';document.getElementById('oDiffBadge').textContent='👥 2인';}document.getElementById('oMessage').textContent='';document.getElementById('oMessage').className='msg';document.getElementById('oRobotW').classList.remove('on');oUpUI();oDraw();if(isAI&&oCfg.myColor===2)setTimeout(()=>oAiMove(),500);}
+function oUpUI(){document.getElementById('oBlackInfo').classList.toggle('active',oCur===1);document.getElementById('oWhiteInfo').classList.toggle('active',oCur===2);document.getElementById('oMoveCount').textContent=oHist.length+'수';}
+function oMyTurn(){return oCfg.mode==='2p'||oCur===oCfg.myColor;}
+function oPlace(r,c){if(oOver||oBoard[r][c])return false;oBoard[r][c]=oCur;oHist.push({row:r,col:c,player:oCur});playStone();const w=oChkWin(r,c,oCur);if(w){oOver=true;oWinC=w;let who;if(oCfg.mode==='2p')who=oCur===1?'🎉 P1 승리!':'🎉 P2 승리!';else{if(oCur===oCfg.myColor){who='🎉 승리!';setTimeout(playWin,300);}else{who='😱 AI 승리!';setTimeout(playLose,300);}}document.getElementById('oMessage').textContent=who;document.getElementById('oMessage').className='msg win';oDraw();return true;}if(oHist.length===oGRID*oGRID){oOver=true;document.getElementById('oMessage').textContent='🤝 무승부!';oDraw();return true;}oCur=oCur===1?2:1;oUpUI();oDraw();return true;}
+function oChkWin(row,col,p){const dirs=[[0,1],[1,0],[1,1],[1,-1]];for(const[dr,dc]of dirs){let cells=[{row,col}];for(let i=1;i<5;i++){const r=row+dr*i,c=col+dc*i;if(r<0||r>=oGRID||c<0||c>=oGRID||oBoard[r][c]!==p)break;cells.push({row:r,col:c});}for(let i=1;i<5;i++){const r=row-dr*i,c=col-dc*i;if(r<0||r>=oGRID||c<0||c>=oGRID||oBoard[r][c]!==p)break;cells.push({row:r,col:c});}if(cells.length>=5)return cells;}return null;}
+function omokUndo(){if(oAiT)return;if(oOver){oOver=false;oWinC=[];document.getElementById('oMessage').textContent='';document.getElementById('oMessage').className='msg';}if(!oHist.length)return;if(oCfg.mode==='ai'&&oHist.length>=2&&oHist[oHist.length-1].player!==oCfg.myColor){const m1=oHist.pop();oBoard[m1.row][m1.col]=0;const m2=oHist.pop();oBoard[m2.row][m2.col]=0;oCur=oCfg.myColor;}else{const m=oHist.pop();oBoard[m.row][m.col]=0;oCur=m.player;}oUpUI();oDraw();}
+
+// OMOK AI
+function oAiMove(){oAiT=true;document.getElementById('oRobotW').classList.add('on');setTimeout(()=>{const mv=oBestMove();if(mv)oPlace(mv.row,mv.col);oAiT=false;document.getElementById('oRobotW').classList.remove('on');},300+oCfg.difficulty*200+Math.random()*300);}
+function oScanLine(row,col,dr,dc,pl){let cn=1,oe=0;oBoard[row][col]=pl;for(let i=1;i<=4;i++){const r=row+dr*i,c=col+dc*i;if(r<0||r>=oGRID||c<0||c>=oGRID)break;if(oBoard[r][c]===pl)cn++;else{if(oBoard[r][c]===0)oe++;break;}}for(let i=1;i<=4;i++){const r=row-dr*i,c=col-dc*i;if(r<0||r>=oGRID||c<0||c>=oGRID)break;if(oBoard[r][c]===pl)cn++;else{if(oBoard[r][c]===0)oe++;break;}}oBoard[row][col]=0;return{count:cn,openEnds:oe};}
+function oEvalPos(row,col,pl){const dirs=[[0,1],[1,0],[1,1],[1,-1]];let total=0,threats=0,forks=0;for(const[dr,dc]of dirs){const{count:cn,openEnds:oe}=oScanLine(row,col,dr,dc,pl);if(cn>=5)total+=1e7;else if(cn===4&&oe>=1){total+=oe===2?5e5:8e4;threats++;}else if(cn===3&&oe===2){total+=1.2e4;threats++;forks++;}else if(cn===3&&oe===1)total+=900;else if(cn===2&&oe===2){total+=500;forks++;}else if(cn===2&&oe===1)total+=60;else if(cn===1&&oe===2)total+=20;}if(forks>=2)total+=3.5e5;if(threats>=2)total+=2.5e5;return total;}
+function oBestMove(){const diff=oCfg.difficulty,aiPl=oCfg.myColor===1?2:1,hPl=oCfg.myColor;const cands=oGetCands();if(!cands.length)return{row:7,col:7};let scored=[];for(const{row,col}of cands){if(oBoard[row][col])continue;const atk=oEvalPos(row,col,aiPl),def=oEvalPos(row,col,hPl);let fs;if(diff===1){fs=atk>=1e7?atk:def>=8e4?def*.6:Math.random()*120;}else if(diff===2){fs=atk>=1e7?atk*2:def>=8e4?def*1.8:atk>=8e4?atk*1.6:def>=1e4?def*1.3:atk+def*.9+Math.random()*40;}else{fs=atk>=1e7?atk*3:def>=1e7?def*2.5:atk>=5e5?atk*2.3:def>=5e5?def*2.1:atk>=1e4?atk*1.9:def>=1e4?def*1.7:atk*1.4+def*1.2;if(atk<1e7&&def<5e5){oBoard[row][col]=aiPl;let fm=0;const fc=oGetCandsAround(row,col,2);for(const f of fc){if(oBoard[f.row][f.col])continue;const s=oEvalPos(f.row,f.col,aiPl);if(s>fm)fm=s;}oBoard[row][col]=0;fs+=fm*.35;}}scored.push({row,col,score:fs});}scored.sort((a,b)=>b.score-a.score);if(diff===1&&Math.random()<.4&&scored.length>1)return scored[Math.floor(Math.random()*Math.min(5,scored.length))];if(diff===2&&Math.random()<.08&&scored.length>1)return scored[Math.floor(Math.random()*Math.min(3,scored.length))];const top=scored[0].score;const best=scored.filter(m=>m.score>=top*.97);return best[Math.floor(Math.random()*best.length)];}
+function oGetCands(){if(!oHist.length)return[{row:7,col:7}];const s=new Set(),rng=oCfg.difficulty>=3?3:2;for(const{row,col}of oHist)for(let dr=-rng;dr<=rng;dr++)for(let dc=-rng;dc<=rng;dc++){const r=row+dr,c=col+dc;if(r>=0&&r<oGRID&&c>=0&&c<oGRID&&!oBoard[r][c])s.add(r*oGRID+c);}return Array.from(s).map(v=>({row:Math.floor(v/oGRID),col:v%oGRID}));}
+function oGetCandsAround(row,col,rng){const s=new Set();for(let dr=-rng;dr<=rng;dr++)for(let dc=-rng;dc<=rng;dc++){const r=row+dr,c=col+dc;if(r>=0&&r<oGRID&&c>=0&&c<oGRID&&!oBoard[r][c])s.add(r*oGRID+c);}return Array.from(s).map(v=>({row:Math.floor(v/oGRID),col:v%oGRID}));}
+
+// OMOK DRAW
+function oDraw(){drawBoard(oCtx,oB.SIZE,oGRID,oB.CELL,oB.PAD);if(oWinC.length){const s=[...oWinC].sort((a,b)=>a.row-b.row||a.col-b.col);oCtx.save();oCtx.strokeStyle='rgba(212,168,67,.7)';oCtx.lineWidth=6;oCtx.shadowColor='rgba(212,168,67,.4)';oCtx.shadowBlur=16;oCtx.lineCap='round';oCtx.beginPath();oCtx.moveTo(oB.PAD+s[0].col*oB.CELL,oB.PAD+s[0].row*oB.CELL);oCtx.lineTo(oB.PAD+s[s.length-1].col*oB.CELL,oB.PAD+s[s.length-1].row*oB.CELL);oCtx.stroke();oCtx.restore();}for(let r=0;r<oGRID;r++)for(let c=0;c<oGRID;c++){if(oBoard[r][c])drawStone(oCtx,oB.PAD+c*oB.CELL,oB.PAD+r*oB.CELL,oBoard[r][c],oB.CELL,oWinC.some(w=>w.row===r&&w.col===c));}if(oHist.length){const l=oHist[oHist.length-1];oCtx.save();oCtx.shadowColor='rgba(192,64,48,.5)';oCtx.shadowBlur=5;oCtx.fillStyle='#c04030';oCtx.beginPath();oCtx.arc(oB.PAD+l.col*oB.CELL,oB.PAD+l.row*oB.CELL,4,0,Math.PI*2);oCtx.fill();oCtx.restore();}if(oHover&&!oOver&&!oAiT&&oMyTurn()&&!oBoard[oHover.row][oHover.col]){oCtx.globalAlpha=.3;drawStone(oCtx,oB.PAD+oHover.col*oB.CELL,oB.PAD+oHover.row*oB.CELL,oCur,oB.CELL,false);oCtx.globalAlpha=1;}}
+function oGetPos(e){const rect=oCanvas.getBoundingClientRect(),sx=oCanvas.width/rect.width,sy=oCanvas.height/rect.height;let cx,cy;if(e.touches){cx=(e.touches[0].clientX-rect.left)*sx;cy=(e.touches[0].clientY-rect.top)*sy;}else{cx=(e.clientX-rect.left)*sx;cy=(e.clientY-rect.top)*sy;}const col=Math.round((cx-oB.PAD)/oB.CELL),row=Math.round((cy-oB.PAD)/oB.CELL);if(col>=0&&col<oGRID&&row>=0&&row<oGRID)return{row,col};return null;}
+function oClick(e){const pos=oGetPos(e);if(!pos||oOver||oAiT||!oMyTurn())return;const ok=oPlace(pos.row,pos.col);if(ok&&oCfg.mode==='ai'&&!oOver&&!oMyTurn())oAiMove();}
+oCanvas.addEventListener('mousemove',e=>{oHover=oGetPos(e);oDraw();});oCanvas.addEventListener('mouseleave',()=>{oHover=null;oDraw();});oCanvas.addEventListener('click',oClick);oCanvas.addEventListener('touchstart',e=>{e.preventDefault();oClick(e);},{passive:false});
+
+// ===================== ALKKAGI =====================
+const aCfg={mode:'ai',difficulty:1,count:5};
+let aStones=[],aCur,aOver,aAnimating,aDragging,aDragStone,aDragStart,aDragEnd,aAiT=false;
+const aCanvas=document.getElementById('alkkBoard'),aCtx=aCanvas.getContext('2d');
+const aGRID=15;let aB;const STONE_R_RATIO=.42;
+function aPick(el,attr){document.querySelectorAll(`[data-${attr}]`).forEach(e=>e.classList.remove('sel'));el.classList.add('sel');if(attr==='amode'){aCfg.mode=el.dataset.amode;const s=aCfg.mode==='ai';document.getElementById('aDiffCard').style.display=s?'':'none';}if(attr==='adiff')aCfg.difficulty=parseInt(el.dataset.adiff);if(attr==='acount')aCfg.count=parseInt(el.dataset.acount);}
+function startAlkkagi(){playStart();document.querySelectorAll('.screen').forEach(s=>{s.classList.add('hidden');s.style.display='none';});document.getElementById('alkkGame').classList.add('visible');aB=calcBoard(aGRID,window.innerWidth);aCanvas.width=aB.SIZE;aCanvas.height=aB.SIZE;initAlkkagi();}
+function initAlkkagi(){aStones=[];aCur=1;aOver=false;aAnimating=false;aDragging=false;aDragStone=null;aDragStart=null;aDragEnd=null;aAiT=false;const isAI=aCfg.mode==='ai',dn=['','🎯 취미','⚔️ 고수','🏆 전문가'];if(isAI){document.getElementById('aBlackLabel').textContent='나';document.getElementById('aWhiteLabel').textContent='AI';document.getElementById('aDiffBadge').textContent=dn[aCfg.difficulty];}else{document.getElementById('aBlackLabel').textContent='P1';document.getElementById('aWhiteLabel').textContent='P2';document.getElementById('aDiffBadge').textContent='👥 2인';}document.getElementById('aMessage').textContent='';document.getElementById('aMessage').className='msg';document.getElementById('aRobotW').classList.remove('on');document.getElementById('alkkInfo').textContent='돌을 드래그하여 튕기세요!';const n=aCfg.count,sr=aB.CELL*STONE_R_RATIO,midX=aB.SIZE/2,topY=aB.PAD+aB.CELL*2,botY=aB.SIZE-aB.PAD-aB.CELL*2;const cols=Math.ceil(Math.sqrt(n));for(let i=0;i<n;i++){const row=Math.floor(i/cols),col=i%cols;const spacing=sr*3;const startX=midX-(cols-1)*spacing/2;const rows=Math.ceil(n/cols);const startYB=botY-(rows-1)*spacing/2;const startYT=topY-(rows-1)*spacing/2;aStones.push({x:startX+col*spacing,y:startYB+row*spacing,vx:0,vy:0,pl:1,r:sr});aStones.push({x:startX+col*spacing,y:startYT+row*spacing,vx:0,vy:0,pl:2,r:sr});}aUpUI();aDraw();}
+function aUpUI(){const bC=aStones.filter(s=>s.pl===1).length,wC=aStones.filter(s=>s.pl===2).length;document.getElementById('aStoneCount').textContent=`흑 ${bC} vs 백 ${wC}`;document.getElementById('aBlackInfo').classList.toggle('active',aCur===1);document.getElementById('aWhiteInfo').classList.toggle('active',aCur===2);}
+function aMyTurn(){return aCfg.mode==='2p'||aCur===1;}
+
+// ALKKAGI PHYSICS
+function aAnimate(){if(!aAnimating)return;let moving=false;const friction=.955;const minV=.25;for(const s of aStones){if(Math.abs(s.vx)>minV||Math.abs(s.vy)>minV){s.x+=s.vx;s.y+=s.vy;s.vx*=friction;s.vy*=friction;moving=true;}else{s.vx=0;s.vy=0;}}for(let i=0;i<aStones.length;i++)for(let j=i+1;j<aStones.length;j++){const a=aStones[i],b=aStones[j];const dx=b.x-a.x,dy=b.y-a.y;const dist=Math.sqrt(dx*dx+dy*dy);const minDist=a.r+b.r;if(dist<minDist&&dist>0){playCollide();const nx=dx/dist,ny=dy/dist;const ol=(minDist-dist)/2;a.x-=nx*ol;a.y-=ny*ol;b.x+=nx*ol;b.y+=ny*ol;const dvx=a.vx-b.vx,dvy=a.vy-b.vy;const dvn=dvx*nx+dvy*ny;if(dvn>0){a.vx-=dvn*nx*.9;a.vy-=dvn*ny*.9;b.vx+=dvn*nx*.9;b.vy+=dvn*ny*.9;moving=true;}}}const margin=10;aStones=aStones.filter(s=>{if(s.x<-margin||s.x>aB.SIZE+margin||s.y<-margin||s.y>aB.SIZE+margin){playCapture();return false;}return true;});aDraw();if(moving)requestAnimationFrame(aAnimate);else{aAnimating=false;aAiT=false;document.getElementById('aRobotW').classList.remove('on');const bL=aStones.filter(s=>s.pl===1).length,wL=aStones.filter(s=>s.pl===2).length;aUpUI();if(bL===0||wL===0){aOver=true;let msg;if(bL===0&&wL===0)msg='🤝 무승부!';else if(wL===0){msg=aCfg.mode==='2p'?'🎉 P1(흑) 승리!':'🎉 승리!';setTimeout(playWin,300);}else{msg=aCfg.mode==='2p'?'🎉 P2(백) 승리!':'😱 AI 승리!';setTimeout(playLose,300);}document.getElementById('aMessage').textContent=msg;document.getElementById('aMessage').className='msg win';return;}aCur=aCur===1?2:1;aUpUI();if(aCfg.mode==='ai'&&aCur===2&&!aOver){aAiT=true;document.getElementById('aRobotW').classList.add('on');setTimeout(aAiFlick,500+aCfg.difficulty*200);}}}
+function aFlick(stone,vx,vy){stone.vx=vx;stone.vy=vy;aAnimating=true;playFlick();requestAnimationFrame(aAnimate);}
+
+// ALKKAGI AI
+function aAiFlick(){const my=aStones.filter(s=>s.pl===2),opp=aStones.filter(s=>s.pl===1);if(!my.length||!opp.length){aAiT=false;document.getElementById('aRobotW').classList.remove('on');return;}const diff=aCfg.difficulty,power=diff===1?6:diff===2?10:14,SIZE=aB.SIZE;let bestS=-Infinity,bestSt=null,bestVx=0,bestVy=0;for(const ms of my){for(const os of opp){const dx=os.x-ms.x,dy=os.y-ms.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1)continue;const nx=dx/dist,ny=dy/dist;const osEdge=Math.min(os.x,os.y,SIZE-os.x,SIZE-os.y);let sc=260-osEdge*1.5+160/Math.max(dist,30)*40;if(diff>=2){const edges=[{ex:0,ey:os.y},{ex:SIZE,ey:os.y},{ex:os.x,ey:0},{ex:os.x,ey:SIZE}];let nE=edges[0],nD=Infinity;for(const e of edges){const d=Math.sqrt((os.x-e.ex)**2+(os.y-e.ey)**2);if(d<nD){nD=d;nE=e;}}const pDx=nE.ex-os.x,pDy=nE.ey-os.y,pDist=Math.sqrt(pDx*pDx+pDy*pDy);if(pDist>1)sc+=(nx*(pDx/pDist)+ny*(pDy/pDist))*(diff>=3?90:50);}const aX=ms.x-nx*power*.3,aY=ms.y-ny*power*.3;const sEA=Math.min(aX,aY,SIZE-aX,SIZE-aY);if(sEA<aB.CELL*1.5)sc-=(diff>=3?70:35);if(diff>=2){for(const fs of my){if(fs===ms)continue;const fDx=fs.x-ms.x,fDy=fs.y-ms.y,fDist=Math.sqrt(fDx*fDx+fDy*fDy);if(fDist<dist){const dot=(fDx*nx+fDy*ny)/fDist;const perp=Math.sqrt(Math.max(0,1-dot*dot))*fDist;if(dot>0&&perp<ms.r*3)sc-=(diff>=3?55:28);}}}if(diff>=3){let nO=0;for(const o2 of opp){if(o2===os)continue;if(Math.sqrt((o2.x-os.x)**2+(o2.y-os.y)**2)<aB.CELL*3)nO++;}sc+=nO*22;}if(diff===1)sc+=Math.random()*200-100;else if(diff===2)sc+=Math.random()*50-25;else sc+=Math.random()*15-7;if(sc>bestS){bestS=sc;bestSt=ms;bestVx=nx*power;bestVy=ny*power;}}}if(diff===1&&Math.random()<.25){const a=(Math.random()-.5)*.8,cos=Math.cos(a),sin=Math.sin(a);const nv=bestVx*cos-bestVy*sin,nw=bestVx*sin+bestVy*cos;bestVx=nv;bestVy=nw;}if(bestSt)aFlick(bestSt,bestVx,bestVy);}
+
+// ALKKAGI DRAW
+function aDraw(){const ctx=aCtx;drawBoard(ctx,aB.SIZE,aGRID,aB.CELL,aB.PAD);ctx.save();ctx.strokeStyle='rgba(192,64,48,.3)';ctx.lineWidth=2.5;ctx.setLineDash([7,5]);ctx.strokeRect(3,3,aB.SIZE-6,aB.SIZE-6);ctx.setLineDash([]);ctx.restore();for(const s of aStones)drawStone(ctx,s.x,s.y,s.pl,aB.CELL,false);if(aDragging&&aDragStone&&aDragEnd){const dx=aDragStart.x-aDragEnd.x,dy=aDragStart.y-aDragEnd.y;const len=Math.sqrt(dx*dx+dy*dy);if(len>5){ctx.save();ctx.strokeStyle='rgba(192,64,48,.5)';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(aDragStone.x,aDragStone.y);ctx.lineTo(aDragStone.x+dx*.8,aDragStone.y+dy*.8);ctx.stroke();const angle=Math.atan2(dy,dx),hl=10;ctx.beginPath();ctx.moveTo(aDragStone.x+dx*.8,aDragStone.y+dy*.8);ctx.lineTo(aDragStone.x+dx*.8-hl*Math.cos(angle-.4),aDragStone.y+dy*.8-hl*Math.sin(angle-.4));ctx.moveTo(aDragStone.x+dx*.8,aDragStone.y+dy*.8);ctx.lineTo(aDragStone.x+dx*.8-hl*Math.cos(angle+.4),aDragStone.y+dy*.8-hl*Math.sin(angle+.4));ctx.stroke();ctx.restore();}}}
+function aGetXY(e){const rect=aCanvas.getBoundingClientRect(),sx=aCanvas.width/rect.width,sy=aCanvas.height/rect.height;if(e.touches)return{x:(e.touches[0].clientX-rect.left)*sx,y:(e.touches[0].clientY-rect.top)*sy};return{x:(e.clientX-rect.left)*sx,y:(e.clientY-rect.top)*sy};}
+function aFindStone(x,y,pl){for(const s of aStones){if(s.pl===pl){const dx=s.x-x,dy=s.y-y;if(Math.sqrt(dx*dx+dy*dy)<s.r*1.5)return s;}}return null;}
+aCanvas.addEventListener('mousedown',e=>{if(aOver||aAnimating||aAiT||!aMyTurn())return;const p=aGetXY(e);const s=aFindStone(p.x,p.y,aCur);if(s){aDragging=true;aDragStone=s;aDragStart=p;aDragEnd=p;document.getElementById('powerWrap').style.visibility='visible';}});
+aCanvas.addEventListener('mousemove',e=>{if(!aDragging)return;aDragEnd=aGetXY(e);const dx=aDragStart.x-aDragEnd.x,dy=aDragStart.y-aDragEnd.y;const pwr=Math.min(Math.sqrt(dx*dx+dy*dy)/150,1);document.getElementById('powerFill').style.width=pwr*100+'%';aDraw();});
+aCanvas.addEventListener('mouseup',e=>{if(!aDragging)return;aDragging=false;document.getElementById('powerWrap').style.visibility='hidden';const dx=aDragStart.x-aDragEnd.x,dy=aDragStart.y-aDragEnd.y;const len=Math.sqrt(dx*dx+dy*dy);if(len>10){const maxP=20;const power=Math.min(len/12,maxP);aFlick(aDragStone,dx/len*power,dy/len*power);}aDragStone=null;aDraw();});
+aCanvas.addEventListener('touchstart',e=>{e.preventDefault();if(aOver||aAnimating||aAiT||!aMyTurn())return;const p=aGetXY(e);const s=aFindStone(p.x,p.y,aCur);if(s){aDragging=true;aDragStone=s;aDragStart=p;aDragEnd=p;document.getElementById('powerWrap').style.visibility='visible';}},{passive:false});
+aCanvas.addEventListener('touchmove',e=>{e.preventDefault();if(!aDragging)return;const t=e.touches[0];const rect=aCanvas.getBoundingClientRect(),sx=aCanvas.width/rect.width,sy=aCanvas.height/rect.height;aDragEnd={x:(t.clientX-rect.left)*sx,y:(t.clientY-rect.top)*sy};const dx=aDragStart.x-aDragEnd.x,dy=aDragStart.y-aDragEnd.y;const pwr=Math.min(Math.sqrt(dx*dx+dy*dy)/150,1);document.getElementById('powerFill').style.width=pwr*100+'%';aDraw();},{passive:false});
+aCanvas.addEventListener('touchend',e=>{e.preventDefault();if(!aDragging)return;aDragging=false;document.getElementById('powerWrap').style.visibility='hidden';const dx=aDragStart.x-aDragEnd.x,dy=aDragStart.y-aDragEnd.y;const len=Math.sqrt(dx*dx+dy*dy);if(len>10){const maxP=20;const power=Math.min(len/12,maxP);aFlick(aDragStone,dx/len*power,dy/len*power);}aDragStone=null;aDraw();},{passive:false});
+
+// ===================== TUTORIAL SYSTEM =====================
+let curLevel='',curSubCat='';
+const TUT={
+beginner:{title:'초급 과정',sub:'25~30급 → 10~13급 | 혼자 19줄에서 끝까지 둘 수 있는 단계',icon:'🌱',cats:[
+{id:'rule',title:'1. 기본 규칙 익히기',desc:'착점, 돌 따기, 집, 끝내기 조건',lessons:[
+{t:'착점과 번갈아 두기',text:'바둑판의 교차점에 돌을 놓습니다.\n흑이 먼저, 백과 번갈아 한 수씩.\n한 번 놓은 돌은 움직일 수 없습니다.',s:[{r:3,c:3,p:1},{r:4,c:5,p:2}],m:[{r:3,c:3,t:'1'},{r:4,c:5,t:'2'}]},
+{t:'활로(活路)란?',text:'돌의 상하좌우 빈 교차점이 활로입니다.\n변: 활로 3개 / 귀: 2개 / 중앙: 4개\n활로가 모두 막히면 돌은 잡힙니다.',s:[{r:4,c:4,p:1}],m:[{r:3,c:4,t:'△'},{r:5,c:4,t:'△'},{r:4,c:3,t:'△'},{r:4,c:5,t:'△'}]},
+{t:'돌 따기(포획)',text:'상대 활로를 모두 막으면 돌을 잡아 들어냅니다.\n★에 두면 백돌을 따낼 수 있습니다.',s:[{r:4,c:4,p:2},{r:3,c:4,p:1},{r:5,c:4,p:1},{r:4,c:3,p:1}],m:[{r:4,c:5,t:'★'}]},
+{t:'연결된 돌과 그룹',text:'같은 색이 상하좌우로 이어지면 하나의 그룹.\n그룹 전체의 활로가 0이 되어야 잡힙니다.',s:[{r:4,c:4,p:1},{r:4,c:5,p:1},{r:5,c:4,p:1}],m:[{r:3,c:4,t:'△'},{r:3,c:5,t:'△'},{r:4,c:6,t:'△'},{r:5,c:5,t:'△'},{r:6,c:4,t:'△'},{r:4,c:3,t:'△'}]},
+{t:'패(Ko) 규칙',text:'한 점을 서로 번갈아 따내면 무한 반복.\n바로 되따낼 수 없습니다.\n한 수를 다른 곳에 두고 나서야 가능.',s:[{r:3,c:3,p:1},{r:3,c:5,p:2},{r:4,c:2,p:1},{r:4,c:4,p:2},{r:4,c:6,p:2},{r:5,c:3,p:1},{r:5,c:5,p:2}],m:[{r:4,c:5,t:'패'}]},
+{t:'집(Territory)이란?',text:'자기 돌로 둘러싸인 빈 교차점이 집.\n게임 목표: 상대보다 많은 집 만들기!',s:[{r:2,c:2,p:1},{r:2,c:3,p:1},{r:2,c:4,p:1},{r:3,c:2,p:1},{r:4,c:2,p:1},{r:3,c:4,p:1},{r:4,c:3,p:1},{r:4,c:4,p:1}],m:[{r:3,c:3,t:'■'}]},
+{t:'게임 끝나는 조건',text:'양쪽 다 패스 → 게임 종료\n점수 = 내 집 + 잡은 돌 수\n백은 6.5집의 덤(komi)을 받습니다.',s:[],m:[]},
+{t:'자충수(착수금지)',text:'자기 활로를 0으로 만드는 수는 금지.\n단, 상대를 잡을 수 있으면 OK!',s:[{r:3,c:4,p:2},{r:5,c:4,p:2},{r:4,c:3,p:2},{r:4,c:5,p:2}],m:[{r:4,c:4,t:'✕'}]}
+]},
+{id:'practice9',title:'2. 9줄 실전 맛보기',desc:'작은 판에서 감각 익히기',lessons:[
+{t:'왜 9줄부터?',text:'19줄은 너무 넓어서 초보에겐 막막합니다.\n9줄에서 10~30판 두면 기본 감각이 잡힙니다.\n져도 OK! 경험이 가장 중요합니다.',s:[],m:[]},
+{t:'9줄 기본 포석',text:'화점(★)에 먼저 두는 것이 기본.\n귀→변→중앙 순서로 세력을 키우세요.',s:[{r:2,c:2,p:1},{r:2,c:6,p:2},{r:6,c:6,p:1},{r:6,c:2,p:2}],m:[{r:2,c:2,t:'★'},{r:2,c:6,t:'★'},{r:6,c:6,t:'★'},{r:6,c:2,t:'★'}]},
+{t:'간단한 전투 연습',text:'상대 돌 근처에 두어 압박하세요.\n단수(아타리)를 걸어 위협하세요.',s:[{r:4,c:4,p:1},{r:4,c:5,p:2},{r:3,c:4,p:1}],m:[{r:5,c:5,t:'?'}]},
+{t:'집 만들기 실전',text:'귀에서 집 만들기가 가장 효율적.\n2면이 벽이니까 적은 돌로도 집이 됩니다.',s:[{r:0,c:0,p:1},{r:0,c:1,p:1},{r:0,c:2,p:1},{r:1,c:2,p:1},{r:2,c:2,p:1}],m:[{r:1,c:0,t:'■'},{r:1,c:1,t:'■'}]}
+]},
+{id:'top5',title:'3. 필수 기술 TOP 5',desc:'단수, 먹여죽이기, 눈 만들기',lessons:[
+{t:'단수 걸기 → 따기',text:'활로 1개 남으면 단수(아타리).\n다음 수에 막으면 잡힙니다.',s:[{r:4,c:4,p:2},{r:3,c:4,p:1},{r:5,c:4,p:1},{r:4,c:3,p:1}],m:[{r:4,c:5,t:'★'}]},
+{t:'단수 피하기',text:'내 돌이 단수면 도망가야 합니다!\n① 한 칸 뛰기 ② 두 칸 뛰기 ③ 연결',s:[{r:4,c:4,p:1},{r:3,c:4,p:2},{r:5,c:4,p:2},{r:4,c:3,p:2}],m:[{r:4,c:5,t:'뛰기'}]},
+{t:'먹여죽이기',text:'내 돌을 일부러 잡히게 하여 상대를 가두는 기술.\n바둑의 가장 아름다운 기술 중 하나.',s:[{r:3,c:3,p:1},{r:3,c:4,p:2},{r:4,c:3,p:2},{r:4,c:4,p:1},{r:5,c:3,p:1},{r:5,c:4,p:1}],m:[{r:4,c:4,t:'미끼'}]},
+{t:'눈 만들기 (한눈 vs 두눈)',text:'한 눈: 상대가 넣으면 잡힘 → 위험!\n두 눈: 절대 잡히지 않음 → 살아있다!',s:[{r:2,c:2,p:1},{r:2,c:3,p:1},{r:2,c:4,p:1},{r:2,c:5,p:1},{r:2,c:6,p:1},{r:3,c:2,p:1},{r:3,c:6,p:1},{r:4,c:2,p:1},{r:4,c:3,p:1},{r:4,c:4,p:1},{r:4,c:5,p:1},{r:4,c:6,p:1}],m:[{r:3,c:3,t:'눈'},{r:3,c:5,t:'눈'}]},
+{t:'살리기 vs 잡기 판단',text:'급한 쪽 먼저!\n상대가 단수면→잡기 / 내가 단수면→살리기',s:[{r:3,c:4,p:2},{r:4,c:3,p:1},{r:4,c:5,p:2},{r:5,c:4,p:1}],m:[]}
+]},
+{id:'tsumego',title:'4. 기본 사활 연습',desc:'죽고 사는 판단 훈련',lessons:[
+{t:'사활이란?',text:'두 눈 만들 수 있으면 산다(活)\n한 눈밖에 못 만들면 죽는다(死)\n바둑 실력의 핵심!',s:[{r:2,c:1,p:1},{r:2,c:2,p:1},{r:2,c:3,p:1},{r:2,c:4,p:1},{r:3,c:1,p:1},{r:3,c:4,p:1},{r:4,c:1,p:1},{r:4,c:2,p:1},{r:4,c:3,p:1},{r:4,c:4,p:1}],m:[{r:3,c:2,t:'?'},{r:3,c:3,t:'?'}]},
+{t:'직사(곧은 넷)',text:'일렬 4칸 비어있으면 무조건 삽니다.\n어디에 두든 두 눈 가능.',s:[{r:2,c:1,p:1},{r:2,c:6,p:1},{r:3,c:1,p:1},{r:3,c:6,p:1},{r:4,c:1,p:1},{r:4,c:2,p:1},{r:4,c:3,p:1},{r:4,c:4,p:1},{r:4,c:5,p:1},{r:4,c:6,p:1}],m:[{r:3,c:2,t:'·'},{r:3,c:3,t:'·'},{r:3,c:4,t:'·'},{r:3,c:5,t:'·'}]},
+{t:'3칸 사활 — 급소',text:'3칸 비어있으면 먼저 두는 쪽이 유리.\n급소 = 항상 가운데!',s:[{r:2,c:2,p:1},{r:2,c:5,p:1},{r:3,c:2,p:1},{r:3,c:5,p:1},{r:4,c:2,p:1},{r:4,c:3,p:1},{r:4,c:4,p:1},{r:4,c:5,p:1}],m:[{r:3,c:3,t:'·'},{r:3,c:4,t:'急'}]},
+{t:'축(사다리)',text:'단수를 연속으로 걸면서 벽까지 몰아 잡기.\n축맥이가 있으면 축은 실패!',s:[{r:4,c:4,p:2},{r:3,c:4,p:1},{r:4,c:3,p:1}],m:[{r:5,c:4,t:'1'},{r:5,c:5,t:'2'}]},
+{t:'장문(그물)',text:'넓게 둘러싸서 도망 못 가게 잡기.\n축보다 느슨하지만 확실합니다.',s:[{r:4,c:4,p:2},{r:3,c:3,p:1},{r:3,c:5,p:1},{r:5,c:3,p:1},{r:5,c:5,p:1}],m:[{r:4,c:5,t:'그물'}]},
+{t:'먹여죽이기 패턴',text:'돌을 희생하여 상대를 가두는 기법.\n1. 끼워넣기형 2. 빼먹기형 3. 옥집형',s:[{r:3,c:3,p:2},{r:3,c:4,p:2},{r:4,c:2,p:1},{r:4,c:5,p:1},{r:5,c:3,p:1},{r:5,c:4,p:1}],m:[{r:4,c:3,t:'미끼'}]}
+]},
+{id:'opening',title:'5. 초보 포석 맛보기',desc:'처음 돌 놓는 위치',lessons:[
+{t:'귀를 먼저 차지하라',text:'귀→변→중앙 순서가 대원칙.\n귀: 2면이 벽, 돌 2~3개로 집 가능.',s:[{r:3,c:3,p:1},{r:3,c:15,p:2},{r:15,c:15,p:1},{r:15,c:3,p:2}],m:[]},
+{t:'화점(4-4)과 소목(3-4)',text:'4-4: 세력 중시 / 3-4: 실리 중시\n3-3: 귀 확보지만 세력 약함.',s:[{r:3,c:3,p:1},{r:4,c:3,p:2}],m:[{r:3,c:3,t:'4-4'},{r:4,c:3,t:'3-4'}]},
+{t:'벌림의 감각',text:'2칸: 안전 / 3칸: 효율 / 4칸+: 침입 위험\n"3칸 벌림은 침입 가능" 기억!',s:[{r:3,c:3,p:1},{r:3,c:6,p:1}],m:[{r:3,c:4,t:'·'},{r:3,c:5,t:'·'}]},
+{t:'걸침 기본',text:'상대 귀에 두어 견제하는 것.\n상대 집을 줄이면서 세력을 키웁니다.',s:[{r:3,c:15,p:2},{r:5,c:13,p:1}],m:[{r:5,c:13,t:'걸침'}]}
+]},
+{id:'endgame0',title:'6. 끝내기 맛보기',desc:'선수·후수, 큰 곳 먼저',lessons:[
+{t:'선수와 후수',text:'선수: 상대가 반드시 응해야 하는 수\n후수: 안 응해도 되는 수\n선수 끝내기 → 이득+차례 유지!',s:[],m:[]},
+{t:'큰 곳 먼저!',text:'끝내기 핵심: 가장 큰 곳부터!\n10집 끝내기 vs 2집 → 당연히 10집 먼저.',s:[],m:[]},
+{t:'상대 집 줄이기',text:'① 밀어 넣기 ② 끼어들기 ③ 경계 밀기\n작은 차이가 승패를 결정합니다.',s:[{r:3,c:6,p:2},{r:4,c:6,p:2},{r:5,c:6,p:2}],m:[{r:4,c:5,t:'밀기'}]}
+]}
+]},
+intermediate:{title:'중급 과정',sub:'12급 → 5급 | 19줄에서 전략적 판단이 가능한 단계',icon:'⚔️',cats:[
+{id:'tsumego2',title:'1. 사활 레벨업',desc:'패턴 암기, 1초 판단',lessons:[
+{t:'허점 사활',text:'겉보기엔 살아보이지만 급소에 두면 죽는 형태.\n"눈 모양이 불완전한가?" 항상 확인!',s:[{r:2,c:2,p:1},{r:2,c:3,p:1},{r:2,c:4,p:1},{r:2,c:5,p:1},{r:3,c:2,p:1},{r:3,c:5,p:1},{r:4,c:2,p:1},{r:4,c:3,p:1},{r:4,c:5,p:1}],m:[{r:3,c:3,t:'急'},{r:3,c:4,t:'?'}]},
+{t:'꺾어 먹기',text:'상대 연결을 꺾어서 잡는 기술.\n"꺾어서 단수"→도망→또 단수→잡힘',s:[{r:3,c:3,p:2},{r:3,c:4,p:2},{r:3,c:5,p:2},{r:4,c:2,p:1},{r:4,c:5,p:1}],m:[{r:4,c:3,t:'꺾기'}]},
+{t:'칠점계단',text:'7칸 공간이 계단 형태면 특수 수순으로 잡기 가능.\n유명한 사활 패턴.',s:[{r:2,c:1,p:1},{r:2,c:2,p:1},{r:2,c:3,p:1},{r:3,c:3,p:1},{r:3,c:4,p:1},{r:4,c:4,p:1},{r:4,c:5,p:1}],m:[]},
+{t:'귀곡사',text:'귀에서만 발생하는 특수 사활.\n겉보기 두 눈이지만 급소에 두면 패 또는 죽음.',s:[{r:0,c:0,p:1},{r:0,c:1,p:1},{r:0,c:2,p:1},{r:1,c:0,p:1},{r:2,c:0,p:1},{r:1,c:2,p:2},{r:2,c:1,p:2}],m:[{r:1,c:1,t:'急'}]},
+{t:'빅(セキ)',text:'양쪽 모두 먼저 두면 잡히는 상태.\n서로 건드리지 않는 것이 최선.',s:[{r:3,c:3,p:1},{r:3,c:4,p:2},{r:4,c:3,p:1},{r:4,c:5,p:2},{r:5,c:3,p:1},{r:5,c:4,p:2}],m:[{r:4,c:4,t:'빅'}]},
+{t:'1초 판단 훈련법',text:'사활 문제 매일 10~20개.\n처음 5초→익숙해지면 1초 안에!\n이것만으로 2~3급 향상.',s:[],m:[]}
+]},
+{id:'tesuji',title:'2. 기본 수법(手筋)',desc:'젖힘, 날일자, 뚫기, 치중',lessons:[
+{t:'젖힘-받음-끊기',text:'가장 기본 전투 패턴.\n젖힘: 옆에서 밀기 / 받음: 받아치기 / 끊기: 분리',s:[{r:4,c:4,p:1},{r:4,c:5,p:2},{r:5,c:5,p:1}],m:[{r:5,c:5,t:'젖힘'},{r:3,c:5,t:'끊기'}]},
+{t:'날일자와 날젖힘',text:'대각선 1칸 뛰기 = 날일자.\n가볍고 연결이 거의 보장됩니다.',s:[{r:4,c:4,p:1}],m:[{r:3,c:5,t:'날일자'},{r:5,c:5,t:'날일자'}]},
+{t:'뚫기(ツケ)',text:'상대 돌에 바로 붙이는 강수.\n접촉전을 만들어 복잡한 전투 유도.',s:[{r:4,c:4,p:2},{r:4,c:5,p:1}],m:[{r:4,c:5,t:'뚫기'}]},
+{t:'치중(置中)',text:'상대 돌 사이 급소에 두기.\n빈삼각을 만들게 하라!',s:[{r:3,c:3,p:2},{r:3,c:5,p:2}],m:[{r:3,c:4,t:'치중'}]},
+{t:'허점 찌르기',text:'연결이 불완전한 곳을 공격.\n끊기 위협으로 선수를 빼앗기.',s:[{r:3,c:3,p:2},{r:3,c:5,p:2},{r:4,c:4,p:1}],m:[{r:3,c:4,t:'찌르기'}]}
+]},
+{id:'fuseki2',title:'3. 실전형 포석',desc:'19줄 전략, 정석 기초',lessons:[
+{t:'빈 귀 2곳 차지하기',text:'빈 귀 3개일 때 2개 차지하면 유리.\n빈 귀→걸침→벌림 순서.',s:[{r:3,c:15,p:1},{r:15,c:3,p:2},{r:3,c:3,p:1}],m:[{r:15,c:15,t:'빈귀'}]},
+{t:'3선 vs 4선',text:'3선: 실리(확실한 집)\n4선: 세력(영향력)\n상황에 따라 선택.',s:[{r:3,c:8,p:1},{r:2,c:8,p:2}],m:[{r:3,c:8,t:'4선'},{r:2,c:8,t:'3선'}]},
+{t:'걸침과 협공',text:'상대 귀에→걸침으로 견제.\n걸침 당하면→협공, 받음, 뛰기 중 선택.',s:[{r:3,c:15,p:2},{r:5,c:14,p:1}],m:[{r:3,c:12,t:'협공'}]},
+{t:'정석 하나 외우기',text:'추천: 소목 한 칸 높은 걸침 기본형.\n외우는 것보다 "왜?"를 이해하세요.',s:[{r:3,c:15,p:1},{r:5,c:14,p:2},{r:2,c:13,p:1},{r:3,c:12,p:2},{r:2,c:15,p:1}],m:[{r:3,c:15,t:'1'},{r:5,c:14,t:'2'},{r:2,c:13,t:'3'},{r:3,c:12,t:'4'},{r:2,c:15,t:'5'}]}
+]},
+{id:'strategy',title:'4. 운영 감각',desc:'두터움, 세력, 공격 방향',lessons:[
+{t:'두터움 vs 모양',text:'두터움: 약점 없이 단단 → 좋음!\n얇음: 끊길 수 있는 형태 → 위험!\n빈삼각 = 나쁜 모양의 대표.',s:[{r:3,c:3,p:1},{r:3,c:4,p:1},{r:4,c:3,p:1}],m:[{r:4,c:4,t:'빈삼각'}]},
+{t:'세력 vs 실리',text:'세력: 바깥 향한 두터운 벽\n실리: 확실한 집\n세력 방향으로 상대 몰면 큰 이득.',s:[{r:3,c:3,p:1},{r:4,c:3,p:1},{r:5,c:3,p:1},{r:6,c:3,p:1}],m:[{r:4,c:4,t:'→'}]},
+{t:'공격의 방향',text:'약한 돌 공격 시:\n내 세력 쪽으로 몰아야 이득.\n잡는 게 목표가 아니라 집 만들기가 진짜 목표.',s:[],m:[]},
+{t:'가벼운 처리와 사석',text:'모든 돌 살리면 전체가 위험.\n가치 낮은 돌 1~2개는 과감히 포기!',s:[],m:[]}
+]},
+{id:'endgame2',title:'5. 끝내기 실전',desc:'선수 끝내기, 역차, 패',lessons:[
+{t:'큰 선수 10수 읽기',text:'끝내기 진입 시:\n1. 선수 끝내기 모두 찾기\n2. 큰 순서대로\n3. 선수 끝→가장 큰 후수.',s:[],m:[]},
+{t:'1집 줄이는 기술',text:'① 경계선 밀기 ② 끼워넣기 ③ 먹여치기\n작은 끝내기가 쌓이면 큰 차이.',s:[{r:3,c:5,p:2},{r:3,c:6,p:2},{r:4,c:5,p:2},{r:4,c:6,p:2}],m:[{r:3,c:4,t:'밀기'}]},
+{t:'패가 있는 끝내기',text:'패재의 수와 크기를 비교하세요.\n패재가 많은 쪽이 유리!',s:[],m:[]},
+{t:'양쪽 선수 판단',text:'"누가 먼저 두면 몇 집 이득?"\n정확히 계산하는 것이 중급의 벽.',s:[],m:[]}
+]}
+]},
+kiboCollection:{title:'명국 기보 50선',sub:'프로 기보로 배우는 실전 감각',icon:'📜',cats:[
+{id:'kibo_open',title:'포석 기보 (1~15)',desc:'프로의 포석 감각',lessons:[]},
+{id:'kibo_mid',title:'중반전 기보 (16~30)',desc:'전투와 세력 전환',lessons:[]},
+{id:'kibo_end',title:'끝내기 기보 (31~40)',desc:'승패를 가르는 끝내기',lessons:[]},
+{id:'kibo_fame',title:'명국·명수 (41~50)',desc:'역사에 남은 한 수',lessons:[]}
+]}
+};
+(function(){
+const K=[
+{t:'1. 화점 마주보기 포석',text:'양쪽 모두 화점(4-4)에 두는 가장 기본적인 포석.\n현대 바둑에서 가장 많이 나오는 시작.\n\n1.흑 우상귀 2.백 좌하귀 3.흑 좌상귀 4.백 우하귀 5.흑 우변 벌림\n\n포인트: 빈 귀 먼저, 벌림으로 확장.',s:[{r:3,c:15,p:1},{r:15,c:3,p:2},{r:3,c:3,p:1},{r:15,c:15,p:2},{r:3,c:10,p:1}],m:[{r:3,c:15,t:'1'},{r:15,c:3,t:'2'},{r:3,c:3,t:'3'},{r:15,c:15,t:'4'},{r:3,c:10,t:'5'}]},
+{t:'2. 소목 기본 포석',text:'소목(3-4)으로 시작하는 실리 중심 포석.\n귀를 단단히 지키려는 의도.\n\n소목=실리, 화점=세력.',s:[{r:4,c:15,p:1},{r:15,c:3,p:2},{r:3,c:4,p:1},{r:14,c:15,p:2}],m:[{r:4,c:15,t:'1'},{r:15,c:3,t:'2'},{r:3,c:4,t:'3'},{r:14,c:15,t:'4'}]},
+{t:'3. 중국식 포석',text:'한쪽 변을 화점+소목+변으로 구축.\n현대 바둑의 대표 포석.\n\n우변을 하나의 세력권으로 만드는 전략.',s:[{r:3,c:15,p:1},{r:15,c:3,p:2},{r:15,c:14,p:1},{r:4,c:3,p:2},{r:9,c:16,p:1}],m:[{r:3,c:15,t:'1'},{r:15,c:3,t:'2'},{r:15,c:14,t:'3'},{r:4,c:3,t:'4'},{r:9,c:16,t:'5'}]},
+{t:'4. 삼연성 포석',text:'화점 3개를 일렬로 두는 대담한 포석.\n엄청난 세력이지만 실리 부족.\n상대 침입 시 공격으로 보상.',s:[{r:3,c:15,p:1},{r:15,c:3,p:2},{r:9,c:9,p:1},{r:3,c:3,p:2},{r:15,c:15,p:1}],m:[{r:3,c:15,t:'1'},{r:9,c:9,t:'3'},{r:15,c:15,t:'5'}]},
+{t:'5. 걸침의 방향',text:'넓은 쪽에서 걸치는 것이 기본.\n자기 세력 쪽에서 걸침→협공 가능.',s:[{r:3,c:15,p:2},{r:5,c:13,p:1},{r:15,c:3,p:1}],m:[{r:5,c:13,t:'걸침'}]},
+{t:'6. 협공의 기본',text:'걸친 돌을 양쪽에서 압박.\n잡기가 아니라 공격하면서 이득 보기.',s:[{r:3,c:15,p:1},{r:5,c:14,p:2},{r:3,c:12,p:1}],m:[{r:3,c:12,t:'협공'}]},
+{t:'7. 눌러서 두텁게',text:'상대를 위에서 눌러 세력을 키움.\n"머리를 누르면 두터워진다".',s:[{r:4,c:4,p:2},{r:5,c:4,p:1},{r:4,c:5,p:1},{r:3,c:5,p:2}],m:[{r:3,c:5,t:'누르기'}]},
+{t:'8. 벌림의 간격',text:'2칸: 안전 / 3칸: 보통 / 4칸: 침입 가능\n5칸 이상: 반드시 침입당함.',s:[{r:3,c:3,p:1},{r:3,c:6,p:1},{r:7,c:3,p:1},{r:7,c:7,p:1}],m:[{r:3,c:4,t:'2칸'},{r:7,c:5,t:'4칸'}]},
+{t:'9. 별자리 정석',text:'화점 걸침→젖힘→늘임의 기본 정석.\n가장 먼저 외워야 할 정석.',s:[{r:3,c:15,p:1},{r:5,c:14,p:2},{r:4,c:15,p:1},{r:5,c:15,p:2}],m:[{r:3,c:15,t:'1'},{r:5,c:14,t:'2'},{r:4,c:15,t:'3'},{r:5,c:15,t:'4'}]},
+{t:'10. 3-3 침입',text:'상대 화점 아래 3-3에 침입.\n귀를 차지하지만 세력을 줌.\n중반 이후 실리 필요 시 사용.',s:[{r:3,c:15,p:2},{r:5,c:15,p:1}],m:[{r:5,c:15,t:'3-3'}]},
+{t:'11. 좋은 모양과 나쁜 모양',text:'좋은: 날일자, 호구 / 나쁜: 빈삼각, 덩어리\n"적은 돌로 많은 활로" = 좋은 모양.',s:[{r:4,c:4,p:1},{r:3,c:5,p:1},{r:5,c:5,p:1}],m:[]},
+{t:'12. 세력의 활용법',text:'세력 방향으로 상대를 모는 전략.\n세력은 집이 아니라 무기!\n"세력 앞에서 벌리지 말라".',s:[{r:3,c:3,p:1},{r:4,c:3,p:1},{r:5,c:3,p:1},{r:6,c:3,p:1},{r:7,c:3,p:1}],m:[{r:5,c:5,t:'→'}]},
+{t:'13. 양걸침 대응',text:'양쪽 걸침→한쪽 굳히고 한쪽 가볍게.\n중요한 쪽을 먼저 굳힌다.',s:[{r:3,c:9,p:1},{r:5,c:7,p:2},{r:5,c:11,p:2}],m:[]},
+{t:'14. 모자쓰기(봉쇄)',text:'상대 돌 위에 두어 밖으로 못 나가게.\n상대를 낮은 곳에 가두고 세력 키움.',s:[{r:5,c:5,p:2},{r:3,c:5,p:1}],m:[{r:3,c:5,t:'모자'}]},
+{t:'15. 두 칸 높은 걸침',text:'일반보다 한 줄 높게 거는 기술.\n가볍고 유연한 대응 가능.',s:[{r:3,c:15,p:2},{r:4,c:12,p:1}],m:[{r:4,c:12,t:'높은걸침'}]},
+{t:'16. 접촉전 시작',text:'돌이 붙으면 전투 시작.\n붙이면 받고, 젖히면 늘이고, 끊으면 잇는다.',s:[{r:4,c:4,p:1},{r:4,c:5,p:2},{r:5,c:5,p:1},{r:3,c:5,p:2}],m:[]},
+{t:'17. 사석 작전',text:'돌 2~3개를 포기하고 큰 이득 취하기.\n"작은 것을 버려 큰 것을 얻는다".',s:[{r:4,c:4,p:1},{r:4,c:5,p:1},{r:5,c:5,p:2},{r:5,c:4,p:2},{r:3,c:5,p:2},{r:3,c:4,p:2}],m:[{r:4,c:4,t:'버림'}]},
+{t:'18. 두 그룹 동시 공격',text:'약한 그룹 2개를 동시에 압박.\n둘 다 살릴 수 없다→양자택일 강요.',s:[{r:3,c:3,p:2},{r:3,c:4,p:2},{r:7,c:3,p:2},{r:7,c:4,p:2}],m:[{r:5,c:3,t:'공격'}]},
+{t:'19. 끊기의 타이밍',text:'너무 일찍: 싸움 불리 / 너무 늦으면: 이어버림\n읽기가 되면 끊어라!',s:[{r:3,c:4,p:2},{r:4,c:5,p:2},{r:4,c:4,p:1}],m:[{r:3,c:5,t:'끊기'}]},
+{t:'20. 중앙 전투',text:'사방이 열려 복잡. 원칙:\n1.연결 유지 2.상대 분리 3.도망길 확보.',s:[{r:7,c:7,p:1},{r:7,c:8,p:2},{r:8,c:7,p:2},{r:8,c:8,p:1},{r:6,c:8,p:1}],m:[]},
+{t:'21. 침입 vs 삭감',text:'침입: 안으로 직접 = 위험하지만 큰 이득\n삭감: 바깥에서 줄이기 = 안전하지만 작은 이득.',s:[{r:3,c:10,p:2},{r:3,c:14,p:2},{r:5,c:12,p:2}],m:[{r:4,c:12,t:'침입'},{r:2,c:12,t:'삭감'}]},
+{t:'22. 세력 전환 타이밍',text:'너무 이르면 작고, 너무 늦으면 파괴됨.\n상대 침입 직전이 전환 타이밍.',s:[{r:3,c:3,p:1},{r:4,c:3,p:1},{r:5,c:3,p:1},{r:6,c:3,p:1}],m:[{r:5,c:5,t:'전환'}]},
+{t:'23. 약한 돌 처리',text:'살린다→안전하지만 손해\n버린다→다른 곳 이득\n활용→패재나 맛으로 사용.',s:[{r:5,c:5,p:1}],m:[{r:5,c:5,t:'약한돌'}]},
+{t:'24. 이단젖힘',text:'두 번 연속 젖히기. 상대를 밀면서 벽 만들기.\n밀린 쪽에 세력 생김.',s:[{r:4,c:4,p:2},{r:4,c:5,p:1},{r:5,c:4,p:1},{r:5,c:5,p:2}],m:[]},
+{t:'25. 대마불사',text:'"큰 그룹은 죽지 않는다"\n활로가 많아 쉽게 안 죽음. 무리하게 잡으려 말 것.',s:[{r:3,c:3,p:2},{r:3,c:4,p:2},{r:3,c:5,p:2},{r:4,c:3,p:2},{r:4,c:4,p:2},{r:5,c:3,p:2}],m:[]},
+{t:'26. 선수의 가치',text:'선수로 이득+다른 큰 곳 = 공짜로 한 수 더.\n선수를 많이 잡는 것이 핵심.',s:[],m:[]},
+{t:'27. 연결과 분리',text:'핵심: 내 돌 연결, 상대 분리.\n끊는 곳과 잇는 곳 항상 확인.',s:[{r:4,c:4,p:1},{r:4,c:6,p:1},{r:4,c:5,p:2}],m:[{r:3,c:5,t:'끊기'}]},
+{t:'28. 뒤집기 공격',text:'약한 그룹 공격하면서 주변에 집 만들기.\n잡기가 목표가 아니라 이득이 목표.',s:[],m:[]},
+{t:'29. 전투 방향 선택',text:'내 세력 방향으로 몰아라.\n상대 세력 방향은 피해라.',s:[],m:[]},
+{t:'30. 후퇴의 미학',text:'한 발 물러서는 것이 최선일 때가 있다.\n"이기고 있으면 싸우지 마라".',s:[],m:[]},
+{t:'31. 끝내기 시작 판단',text:'큰 전투 끝, 경계 정해지면 끝내기.\n"더 큰 곳 없다"고 느끼면.',s:[],m:[]},
+{t:'32. 선수 끝내기 종류',text:'밀기, 젖히기, 치중.\n선수를 모두 찾아서 큰 순서대로!',s:[],m:[]},
+{t:'33. 후수 끝내기 가치',text:'가치 = 양쪽 차이 ÷ 2\n예: +4 vs -4 → 가치 4집.',s:[],m:[]},
+{t:'34. 1선 끝내기',text:'1선은 작아 보이지만 선수로 2~3집!\n"하나 밀고 들어가기"의 가치.',s:[{r:8,c:3,p:2},{r:8,c:4,p:2},{r:8,c:5,p:2}],m:[{r:8,c:2,t:'밀기'}]},
+{t:'35. 큰 요세 판단',text:'큰 끝내기 놓치면 10집 이상 손해!\n선수 6집 > 후수 10집.',s:[],m:[]},
+{t:'36. 패 끝내기',text:'패 이기면 몇 집? 지면 몇 집?\n패재의 크기와 수 계산 필요.',s:[],m:[]},
+{t:'37. 반집의 차이',text:'프로는 0.5집으로 승패가 갈림.\n마지막 1집을 다투는 것이 진정한 끝내기.',s:[],m:[]},
+{t:'38. 수상전 끝내기',text:'바깥 활로부터 메우기.\n공배는 나중에. 수가 긴 쪽이 유리.',s:[{r:3,c:3,p:1},{r:3,c:4,p:2},{r:4,c:3,p:1},{r:4,c:4,p:2}],m:[]},
+{t:'39. 귀의 끝내기',text:'귀에서 밀기가 의외로 큰 가치!\n"귀는 작아 보여도 3~5집 차이".',s:[{r:0,c:0,p:1},{r:0,c:1,p:1},{r:1,c:0,p:1}],m:[]},
+{t:'40. 완벽한 끝내기 수순',text:'1.가장 큰 선수→2.두 번째 큰 선수→...\n→선수 끝→가장 큰 후수.\n이 순서로 5~10집 이득.',s:[],m:[]},
+{t:'41. 첫 수 천원(天元)',text:'바둑판 정중앙에 첫 수를 두는 파격.\n상대를 심리적으로 압박.',s:[{r:9,c:9,p:1}],m:[{r:9,c:9,t:'天'}]},
+{t:'42. 환격(축맥이)',text:'축 진행 방향에 미리 놓으면 축 실패.\n축 시작 전 반드시 확인!',s:[{r:4,c:4,p:2},{r:3,c:4,p:1},{r:4,c:3,p:1},{r:8,c:8,p:2}],m:[{r:8,c:8,t:'축맥이'}]},
+{t:'43. 먹여치기 묘수',text:'일부러 잡히게 한 뒤 그 자리에 다시 두기.\n"잡히면서 잡는다".',s:[{r:3,c:3,p:1},{r:3,c:4,p:2},{r:4,c:3,p:2},{r:4,c:5,p:1},{r:5,c:4,p:1}],m:[{r:4,c:4,t:'미끼'}]},
+{t:'44. 양단수 결정타',text:'한 수로 두 곳 동시 단수.\n상대는 한쪽만 살릴 수 있다!',s:[{r:3,c:4,p:2},{r:5,c:4,p:2},{r:4,c:3,p:1},{r:4,c:5,p:1}],m:[{r:4,c:4,t:'양단수'}]},
+{t:'45. 수상전의 묘수',text:'수순을 바꾸면 결과가 180도 달라짐.\n"어디서부터 메울 것인가"가 생사 결정.',s:[{r:3,c:3,p:1},{r:3,c:4,p:2},{r:4,c:3,p:1},{r:4,c:4,p:2},{r:5,c:3,p:1},{r:5,c:4,p:2}],m:[]},
+{t:'46. 대국관의 차이',text:'실리파: "집이 확실하니 유리"\n세력파: "세력이 크니 유리"\n자기 스타일을 관철하는 것이 중요.',s:[],m:[]},
+{t:'47. 역전의 한 수',text:'불리한 형세에서 반전을 만드는 수.\n대부분 상대 약점 찌르기.\n"져도 끝까지 약점을 찾아라".',s:[],m:[]},
+{t:'48. 패싸움의 기술',text:'패재를 미리 준비, 큰 것부터 사용.\n패의 크기 vs 패재의 크기 비교가 핵심.',s:[],m:[]},
+{t:'49. 빅 판단',text:'서로 건드리지 않는 것이 최선인 경우.\n한쪽이 욕심내면 오히려 손해!',s:[{r:3,c:3,p:1},{r:3,c:4,p:2},{r:4,c:3,p:1},{r:4,c:5,p:2},{r:5,c:3,p:1},{r:5,c:4,p:2}],m:[{r:4,c:4,t:'빅'}]},
+{t:'50. 복기의 기술',text:'게임 후 처음부터 다시 분석.\n1.형세 기울어진 곳 2.사활 판단 3.끝내기 놓친 곳\n"복기 없는 대국은 반쪽짜리 공부".',s:[],m:[]}
+];
+const cats=TUT.kiboCollection.cats;
+K.forEach((k,i)=>{cats[i<15?0:i<30?1:i<40?2:3].lessons.push({t:k.t,text:k.text,s:k.s||[],m:k.m||[]});});
+})();
+
+function buildTutMenu(){
+  const body=document.getElementById('tutBody');
+  let html='';
+  for(const[key,d]of[['beginner',TUT.beginner],['intermediate',TUT.intermediate],['kiboCollection',TUT.kiboCollection]]){
+    const total=d.cats.reduce((a,c)=>a+c.lessons.length,0);
+    html+=`<div style="margin-bottom:12px"><div class="gcard" onclick="openLevel('${key}')">
+      <div class="gc-i" style="background:var(--bg2);font-size:28px">${d.icon}</div>
+      <div class="gc-info"><div class="gc-t">${d.title}</div><div class="gc-d">${d.sub} (${total}개)</div></div>
+      <div class="gc-a">›</div>
+    </div></div>`;
+  }
+  body.innerHTML=html;
+}
+function openLevel(key){
+  curLevel=key;const d=TUT[key];
+  document.getElementById('subCatTitle').textContent=d.title;
+  let html=`<div style="font-size:12px;color:var(--sub);margin-bottom:14px;line-height:1.7">${d.sub}</div>`;
+  d.cats.forEach((cat,i)=>{
+    html+=`<div class="tut-item" onclick="openSubCat('${key}',${i})" style="margin-bottom:6px">
+      <div class="tut-num">${i+1}</div>
+      <div class="tut-item-info"><div class="tut-item-t">${cat.title}</div><div class="tut-item-d">${cat.desc} (${cat.lessons.length}개)</div></div>
+      <div class="gc-a">›</div>
+    </div>`;
+  });
+  document.getElementById('subCatBody').innerHTML=html;
+  document.getElementById('subCatScreen').classList.remove('hidden');
+}
+function openSubCat(key,ci){
+  curLevel=key;curSubCat=ci;const cat=TUT[key].cats[ci];
+  document.getElementById('lessonListTitle').textContent=cat.title;
+  let html=`<div style="font-size:12px;color:var(--sub);margin-bottom:12px">${cat.desc}</div><div class="tut-list">`;
+  cat.lessons.forEach((l,i)=>{
+    html+=`<div class="tut-item" onclick="openLesson2('${key}',${ci},${i})"><div class="tut-num">${i+1}</div><div class="tut-item-info"><div class="tut-item-t">${l.t}</div></div><div class="gc-a">›</div></div>`;
+  });
+  html+='</div>';
+  document.getElementById('lessonListBody').innerHTML=html;
+  document.getElementById('lessonListScreen').classList.remove('hidden');
+}
+function openLesson2(key,ci,li){
+  const cat=TUT[key].cats[ci],l=cat.lessons[li];
+  document.getElementById('lessonHeader').textContent=l.t;
+  const big=l.s&&l.s.some(s=>s.r>8||s.c>8);
+  let html=`<div class="lesson-title">${l.t}</div><div class="lesson-text">${l.text}</div>`;
+  if(l.s&&l.s.length>0)html+=`<div class="lesson-board"><canvas id="lc"></canvas></div>`;
+  html+=`<div class="lesson-nav">`;
+  if(li>0)html+=`<button class="gb" onclick="openLesson2('${key}',${ci},${li-1})">← 이전</button>`;
+  html+=`<span style="font-size:11px;color:var(--sub);padding:6px">${li+1}/${cat.lessons.length}</span>`;
+  if(li<cat.lessons.length-1)html+=`<button class="gb" onclick="openLesson2('${key}',${ci},${li+1})">다음 →</button>`;
+  html+=`</div>`;
+  document.getElementById('lessonBody').innerHTML=html;
+  document.getElementById('lessonScreen').classList.remove('hidden');
+  document.getElementById('lessonBody').scrollTop=0;
+  if(l.s&&l.s.length>0)setTimeout(()=>drawL(l,big),50);
+}
+function closeLesson(){document.getElementById('lessonScreen').classList.add('hidden');}
+function backToTutMenu(){document.getElementById('subCatScreen').classList.add('hidden');}
+function backToSubCat(){document.getElementById('lessonListScreen').classList.add('hidden');}
+function drawL(l,big){
+  const cv=document.getElementById('lc');if(!cv)return;const ctx=cv.getContext('2d');
+  const G=big?19:9,CL=big?18:28,PD=big?14:22,SZ=CL*(G-1)+PD*2;
+  cv.width=SZ;cv.height=SZ;cv.style.maxWidth=big?'360px':'260px';
+  drawBoard(ctx,SZ,G,CL,PD);
+  for(const s of l.s){if(s.r<G&&s.c<G)drawStone(ctx,PD+s.c*CL,PD+s.r*CL,s.p,CL,false);}
+  if(l.m){ctx.font=`bold ${big?8:11}px "Noto Sans KR",sans-serif`;ctx.textAlign='center';ctx.textBaseline='middle';
+    for(const m of l.m){if(m.r<G&&m.c<G){const x=PD+m.c*CL,y=PD+m.r*CL;
+      ctx.fillStyle='rgba(255,255,255,.75)';ctx.beginPath();ctx.arc(x,y,big?7:10,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#b03020';ctx.fillText(m.t,x,y);}}}
+}
+function buildRules(){
+  document.getElementById('rulesBody').innerHTML=`
+<h2>바둑 규칙</h2>
+<p>바둑은 흑과 백이 번갈아 19×19 바둑판의 교차점에 돌을 놓는 게임입니다. 목표는 상대보다 많은 영역(집)을 차지하는 것입니다.</p>
+<h3>기본 규칙</h3>
+<p>1. 흑이 먼저 둡니다<br>2. 한 번 놓은 돌은 움직일 수 없습니다<br>3. 상대 돌의 활로를 모두 막으면 잡을 수 있습니다<br>4. 자충수는 금지 (예외: 상대 잡을 수 있을 때)<br>5. 패(Ko): 바로 되따낼 수 없습니다<br>6. 양쪽 모두 패스하면 게임 종료</p>
+<h3>점수 계산</h3>
+<p>점수 = 자기 영역(집) + 잡은 돌 수<br>백은 6.5집의 덤(komi)을 받습니다.</p>
+<h2>오목 규칙</h2>
+<p>15×15 바둑판에서 자기 돌 5개를 가로, 세로, 대각선으로 연속하여 놓으면 승리합니다.</p>
+<h2>알까기 규칙</h2>
+<p>바둑판 위의 돌을 튕겨 상대 돌을 판 밖으로 밀어내는 게임입니다.<br>번갈아 자기 돌을 드래그하여 튕기고, 상대 돌을 모두 제거하면 승리합니다.</p>`;
+}
+buildTutMenu();buildRules();
+// ===================== RESIZE =====================
+let _rT;window.addEventListener('resize',()=>{clearTimeout(_rT);_rT=setTimeout(()=>{
+  if(document.getElementById('omokGame').classList.contains('visible')){oB=calcBoard(oGRID,window.innerWidth);oCanvas.width=oB.SIZE;oCanvas.height=oB.SIZE;oDraw();}
+  if(document.getElementById('badukGame').classList.contains('visible')){bB=calcBoard(bGRID,window.innerWidth);bCanvas.width=bB.SIZE;bCanvas.height=bB.SIZE;if(bMarking)bDrawMarking();else bDraw();}
+  if(document.getElementById('alkkGame').classList.contains('visible')){const old=aB.SIZE;aB=calcBoard(aGRID,window.innerWidth);aCanvas.width=aB.SIZE;aCanvas.height=aB.SIZE;const sc=aB.SIZE/old;const nR=aB.CELL*STONE_R_RATIO;for(const s of aStones){s.x*=sc;s.y*=sc;s.r=nR;}aDraw();}
+},150);});
+
+// ===================== PWA =====================
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;document.getElementById('installBanner').classList.add('show');});
+function installApp(){if(deferredPrompt){deferredPrompt.prompt();deferredPrompt.userChoice.then(()=>{deferredPrompt=null;document.getElementById('installBanner').classList.remove('show');});}}
+function dismissInstall(){document.getElementById('installBanner').classList.remove('show');}
+</script>
+</body>
+</html>

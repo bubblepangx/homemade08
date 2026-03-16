@@ -1,0 +1,17 @@
+{
+  "name": "고수의 바둑판",
+  "short_name": "바둑판",
+  "description": "바둑 · 오목 · 알까기 — 성인을 위한 보드게임",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#f0ebe3",
+  "theme_color": "#f0ebe3",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'><rect width='192' height='192' rx='32' fill='%23c8a038'/><circle cx='72' cy='72' r='20' fill='%23222'/><circle cx='120' cy='72' r='20' fill='%23fff' stroke='%23ccc'/><circle cx='96' cy='110' r='20' fill='%23222'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    }
+  ]
+}
