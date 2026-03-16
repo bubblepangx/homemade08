@@ -582,7 +582,28 @@ function aAnimate(){if(!aAnimating)return;let moving=false;const friction=.955;c
 function aFlick(stone,vx,vy){stone.vx=vx;stone.vy=vy;aAnimating=true;playFlick();requestAnimationFrame(aAnimate);}
 
 // ALKKAGI AI
-function aAiFlick(){const my=aStones.filter(s=>s.pl===2),opp=aStones.filter(s=>s.pl===1);if(!my.length||!opp.length){aAiT=false;document.getElementById('aRobotW').classList.remove('on');return;}const diff=aCfg.difficulty,power=diff===1?6:diff===2?10:14,SIZE=aB.SIZE;let bestS=-Infinity,bestSt=null,bestVx=0,bestVy=0;for(const ms of my){for(const os of opp){const dx=os.x-ms.x,dy=os.y-ms.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1)continue;const nx=dx/dist,ny=dy/dist;const osEdge=Math.min(os.x,os.y,SIZE-os.x,SIZE-os.y);let sc=260-osEdge*1.5+160/Math.max(dist,30)*40;if(diff>=2){const edges=[{ex:0,ey:os.y},{ex:SIZE,ey:os.y},{ex:os.x,ey:0},{ex:os.x,ey:SIZE}];let nE=edges[0],nD=Infinity;for(const e of edges){const d=Math.sqrt((os.x-e.ex)**2+(os.y-e.ey)**2);if(d<nD){nD=d;nE=e;}}const pDx=nE.ex-os.x,pDy=nE.ey-os.y,pDist=Math.sqrt(pDx*pDx+pDy*pDy);if(pDist>1)sc+=(nx*(pDx/pDist)+ny*(pDy/pDist))*(diff>=3?90:50);}const aX=ms.x-nx*power*.3,aY=ms.y-ny*power*.3;const sEA=Math.min(aX,aY,SIZE-aX,SIZE-aY);if(sEA<aB.CELL*1.5)sc-=(diff>=3?70:35);if(diff>=2){for(const fs of my){if(fs===ms)continue;const fDx=fs.x-ms.x,fDy=fs.y-ms.y,fDist=Math.sqrt(fDx*fDx+fDy*fDy);if(fDist<dist){const dot=(fDx*nx+fDy*ny)/fDist;const perp=Math.sqrt(Math.max(0,1-dot*dot))*fDist;if(dot>0&&perp<ms.r*3)sc-=(diff>=3?55:28);}}}if(diff>=3){let nO=0;for(const o2 of opp){if(o2===os)continue;if(Math.sqrt((o2.x-os.x)**2+(o2.y-os.y)**2)<aB.CELL*3)nO++;}sc+=nO*22;}if(diff===1)sc+=Math.random()*200-100;else if(diff===2)sc+=Math.random()*50-25;else sc+=Math.random()*15-7;if(sc>bestS){bestS=sc;bestSt=ms;bestVx=nx*power;bestVy=ny*power;}}}if(diff===1&&Math.random()<.25){const a=(Math.random()-.5)*.8,cos=Math.cos(a),sin=Math.sin(a);const nv=bestVx*cos-bestVy*sin,nw=bestVx*sin+bestVy*cos;bestVx=nv;bestVy=nw;}if(bestSt)aFlick(bestSt,bestVx,bestVy);}
+function aAiFlick(){const my=aStones.filter(s=>s.pl===2),opp=aStones.filter(s=>s.pl===1);if(!my.length||!opp.length){aAiT=false;document.getElementById('aRobotW').classList.remove('on');return;}const diff=aCfg.difficulty,power=diff===1?6:diff===2?15:19,SIZE=aB.SIZE;let bestS=-Infinity,bestSt=null,bestVx=0,bestVy=0;
+for(const ms of my){for(const os of opp){const dx=os.x-ms.x,dy=os.y-ms.y,dist=Math.sqrt(dx*dx+dy*dy);if(dist<1)continue;const nx=dx/dist,ny=dy/dist;
+const osEdge=Math.min(os.x,os.y,SIZE-os.x,SIZE-os.y);let sc=260-osEdge*1.8+180/Math.max(dist,25)*45;
+// Edge push alignment
+if(diff>=2){const edges=[{ex:0,ey:os.y},{ex:SIZE,ey:os.y},{ex:os.x,ey:0},{ex:os.x,ey:SIZE}];let nE=edges[0],nD=Infinity;for(const e of edges){const d=Math.sqrt((os.x-e.ex)**2+(os.y-e.ey)**2);if(d<nD){nD=d;nE=e;}}const pDx=nE.ex-os.x,pDy=nE.ey-os.y,pDist=Math.sqrt(pDx*pDx+pDy*pDy);if(pDist>1){const align=nx*(pDx/pDist)+ny*(pDy/pDist);sc+=align*(diff>=3?130:80);if(align>0.7)sc+=(diff>=3?60:30);}}
+// Self preservation
+const aX=ms.x-nx*power*.35,aY=ms.y-ny*power*.35;const sEA=Math.min(aX,aY,SIZE-aX,SIZE-aY);if(sEA<aB.CELL*1.5)sc-=(diff>=3?90:50);if(sEA<aB.CELL*0.5)sc-=200;
+// Avoid friendly fire
+if(diff>=2){for(const fs of my){if(fs===ms)continue;const fDx=fs.x-ms.x,fDy=fs.y-ms.y,fDist=Math.sqrt(fDx*fDx+fDy*fDy);if(fDist<dist){const dot=(fDx*nx+fDy*ny)/fDist;const perp=Math.sqrt(Math.max(0,1-dot*dot))*fDist;if(dot>0&&perp<ms.r*3)sc-=(diff>=3?80:40);}}}
+// Multi-kill bonus
+if(diff>=2){let nO=0;for(const o2 of opp){if(o2===os)continue;const d2=Math.sqrt((o2.x-os.x)**2+(o2.y-os.y)**2);if(d2<aB.CELL*(diff>=3?4:3))nO++;}sc+=nO*(diff>=3?35:20);}
+// Diff3: prefer targets already near edge
+if(diff>=3){if(osEdge<aB.CELL*2)sc+=80;if(osEdge<aB.CELL)sc+=60;
+// Diff3: prefer using stones far from edge (safer shooters)
+const msEdge=Math.min(ms.x,ms.y,SIZE-ms.x,SIZE-ms.y);if(msEdge>aB.CELL*3)sc+=25;}
+// Randomness
+if(diff===1)sc+=Math.random()*200-100;else if(diff===2)sc+=Math.random()*25-12;else sc+=Math.random()*8-4;
+if(sc>bestS){bestS=sc;bestSt=ms;bestVx=nx*power;bestVy=ny*power;}}}
+// Diff1: 25% aim wobble / Diff2: 8% slight wobble / Diff3: no wobble
+if(diff===1&&Math.random()<.25){const a=(Math.random()-.5)*.8,cos=Math.cos(a),sin=Math.sin(a);const nv=bestVx*cos-bestVy*sin,nw=bestVx*sin+bestVy*cos;bestVx=nv;bestVy=nw;}
+if(diff===2&&Math.random()<.08){const a=(Math.random()-.5)*.3,cos=Math.cos(a),sin=Math.sin(a);const nv=bestVx*cos-bestVy*sin,nw=bestVx*sin+bestVy*cos;bestVx=nv;bestVy=nw;}
+if(bestSt)aFlick(bestSt,bestVx,bestVy);}
 
 // ALKKAGI DRAW
 function aDraw(){const ctx=aCtx;drawBoard(ctx,aB.SIZE,aGRID,aB.CELL,aB.PAD);ctx.save();ctx.strokeStyle='rgba(192,64,48,.3)';ctx.lineWidth=2.5;ctx.setLineDash([7,5]);ctx.strokeRect(3,3,aB.SIZE-6,aB.SIZE-6);ctx.setLineDash([]);ctx.restore();for(const s of aStones)drawStone(ctx,s.x,s.y,s.pl,aB.CELL,false);if(aDragging&&aDragStone&&aDragEnd){const dx=aDragStart.x-aDragEnd.x,dy=aDragStart.y-aDragEnd.y;const len=Math.sqrt(dx*dx+dy*dy);if(len>5){ctx.save();ctx.strokeStyle='rgba(192,64,48,.5)';ctx.lineWidth=2.5;ctx.lineCap='round';ctx.beginPath();ctx.moveTo(aDragStone.x,aDragStone.y);ctx.lineTo(aDragStone.x+dx*.8,aDragStone.y+dy*.8);ctx.stroke();const angle=Math.atan2(dy,dx),hl=10;ctx.beginPath();ctx.moveTo(aDragStone.x+dx*.8,aDragStone.y+dy*.8);ctx.lineTo(aDragStone.x+dx*.8-hl*Math.cos(angle-.4),aDragStone.y+dy*.8-hl*Math.sin(angle-.4));ctx.moveTo(aDragStone.x+dx*.8,aDragStone.y+dy*.8);ctx.lineTo(aDragStone.x+dx*.8-hl*Math.cos(angle+.4),aDragStone.y+dy*.8-hl*Math.sin(angle+.4));ctx.stroke();ctx.restore();}}}
